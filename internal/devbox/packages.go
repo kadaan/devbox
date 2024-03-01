@@ -261,7 +261,7 @@ func (d *Devbox) ensureStateIsUpToDate(ctx context.Context, mode installMode) er
 	}
 
 	if mode == install || mode == update || mode == ensure {
-		if err := d.installPackages(ctx); err != nil {
+		if err := d.installPackages(ctx, mode); err != nil {
 			return err
 		}
 	}
@@ -385,7 +385,7 @@ func resetProfileDirForFlakes(profileDir string) (err error) {
 	return errors.WithStack(os.Remove(profileDir))
 }
 
-func (d *Devbox) installPackages(ctx context.Context) error {
+func (d *Devbox) installPackages(ctx context.Context, mode installMode) error {
 	// Create plugin directories first because packages might need them
 	for _, pkg := range d.InstallablePackages() {
 		if err := d.PluginManager().Create(pkg); err != nil {
@@ -393,7 +393,7 @@ func (d *Devbox) installPackages(ctx context.Context) error {
 		}
 	}
 
-	if err := d.installNixPackagesToStore(ctx); err != nil {
+	if err := d.installNixPackagesToStore(ctx, mode); err != nil {
 		return err
 	}
 
@@ -421,7 +421,7 @@ func (d *Devbox) InstallRunXPackages(ctx context.Context) error {
 // This is done by running `nix build` on the flake. We do this so that the
 // packages will be available in the nix store when computing the devbox environment
 // and installing in the nix profile (even if offline).
-func (d *Devbox) installNixPackagesToStore(ctx context.Context) error {
+func (d *Devbox) installNixPackagesToStore(ctx context.Context, mode installMode) error {
 	packages, err := d.packagesToInstallInProfile(ctx)
 	if err != nil {
 		return err
@@ -437,13 +437,17 @@ func (d *Devbox) installNixPackagesToStore(ctx context.Context) error {
 			return err
 		}
 
+		// --no-link to avoid generating the result objects
+		flags := []string{"--no-link"}
+		if mode == update {
+			flags = append(flags, "--refresh")
+		}
 		stepMsg := fmt.Sprintf("[%d/%d] %s", stepNum, total, pkg)
 		fmt.Fprintf(d.stderr, stepMsg+"\n")
 
 		args := &nix.BuildArgs{
 			AllowInsecure: pkg.HasAllowInsecure(),
-			// --no-link to avoid generating the result objects
-			Flags: []string{"--no-link"},
+			Flags:         flags,
 		}
 		err = nix.Build(ctx, args, installable)
 		if err != nil {
