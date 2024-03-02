@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"go.jetpack.io/devbox/internal/nix/flake"
+
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.jetpack.io/devbox/internal/boxcli/usererr"
@@ -45,7 +47,7 @@ type Package struct {
 	//
 	// This is done for performance reasons. Some commands don't require the
 	// fully-resolved package, so we don't want to waste time computing it.
-	installable FlakeInstallable
+	installable flake.Installable
 
 	// resolve resolves a Devbox package string to a Nix installable.
 	//
@@ -152,7 +154,7 @@ func newPackage(raw string, isInstallable bool, locker lock.Locker) *Package {
 	// or it's a flake installable. In some cases they're ambiguous
 	// ("nixpkgs" is a devbox package and a flake). When that happens, we
 	// assume a Devbox package.
-	parsed, err := ParseFlakeInstallable(raw)
+	parsed, err := flake.ParseInstallable(raw)
 	if err != nil || pkgtype.IsAmbiguous(raw, parsed) {
 		pkg.IsDevboxPackage = true
 		pkg.resolve = sync.OnceValue(func() error { return resolve(pkg) })
@@ -176,7 +178,7 @@ func resolve(pkg *Package) error {
 	if inCache, err := pkg.IsInBinaryCache(); err == nil && inCache {
 		pkg.storePath = resolved.Systems[nix.System()].StorePath
 	}
-	parsed, err := ParseFlakeInstallable(resolved.Resolved)
+	parsed, err := flake.ParseInstallable(resolved.Resolved)
 	if err != nil {
 		return err
 	}
@@ -184,8 +186,8 @@ func resolve(pkg *Package) error {
 	return nil
 }
 
-func (p *Package) setInstallable(i FlakeInstallable, projectDir string) {
-	if i.Ref.Type == FlakeTypePath && !filepath.IsAbs(i.Ref.Path) {
+func (p *Package) setInstallable(i flake.Installable, projectDir string) {
+	if i.Ref.Type == flake.TypePath && !filepath.IsAbs(i.Ref.Path) {
 		i.Ref.Path = filepath.Join(projectDir, i.Ref.Path)
 	}
 	p.installable = i
@@ -202,9 +204,9 @@ func (p *Package) FlakeInputName() string {
 
 	result := ""
 	switch p.installable.Ref.Type {
-	case FlakeTypePath:
+	case flake.TypePath:
 		result = filepath.Base(p.installable.Ref.Path) + "-" + p.Hash()
-	case FlakeTypeGitHub:
+	case flake.TypeGitHub:
 		isNixOS := strings.ToLower(p.installable.Ref.Owner) == "nixos"
 		isNixpkgs := isNixOS && strings.ToLower(p.installable.Ref.Repo) == "nixpkgs"
 		if isNixpkgs && p.IsDevboxPackage {
@@ -268,8 +270,8 @@ func (p *Package) Installable() (string, error) {
 // FlakeInstallable returns a flake installable. The raw string must contain
 // a valid flake reference parsable by ParseFlakeRef, optionally followed by an
 // #attrpath and/or an ^output.
-func (p *Package) FlakeInstallable() (FlakeInstallable, error) {
-	return ParseFlakeInstallable(p.Raw)
+func (p *Package) FlakeInstallable() (flake.Installable, error) {
+	return flake.ParseInstallable(p.Raw)
 }
 
 // urlForInstall is used during `nix profile install`.
@@ -414,7 +416,7 @@ var ErrCannotBuildPackageOnSystem = errors.New("unable to build for system")
 
 func (p *Package) Hash() string {
 	sum := ""
-	if p.installable.Ref.Type == FlakeTypePath {
+	if p.installable.Ref.Type == flake.TypePath {
 		// For local flakes, use content hash of the flake.nix file to ensure
 		// user always gets newest flake.
 		sum, _ = cachehash.File(filepath.Join(p.installable.Ref.Path, "flake.nix"))

@@ -1,4 +1,4 @@
-package devpkg
+package flake
 
 import (
 	"net/url"
@@ -10,27 +10,27 @@ import (
 )
 
 const (
-	FlakeTypeIndirect = "indirect"
-	FlakeTypePath     = "path"
-	FlakeTypeFile     = "file"
-	FlakeTypeGit      = "git"
-	FlakeTypeGitHub   = "github"
-	FlakeTypeTarball  = "tarball"
+	TypeIndirect = "indirect"
+	TypePath     = "path"
+	TypeFile     = "file"
+	TypeGit      = "git"
+	TypeGitHub   = "github"
+	TypeTarball  = "tarball"
 )
 
-// FlakeRef is a parsed Nix flake reference. A flake reference is a subset of
+// Ref is a parsed Nix flake reference. A flake reference is a subset of
 // the Nix CLI "installable" syntax. Installables may specify an attribute path
 // and derivation outputs with a flake reference using the '#' and '^' characters.
 // For example, the string "nixpkgs" and "./flake" are valid flake references,
 // but "nixpkgs#hello" and "./flake#app^bin,dev" are not.
 //
-// The JSON encoding of FlakeRef corresponds to the exploded attribute set
+// The JSON encoding of Ref corresponds to the exploded attribute set
 // form of the flake reference in Nix.
 //
 // See the [Nix manual] for details on flake references.
 //
 // [Nix manual]: https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake
-type FlakeRef struct {
+type Ref struct {
 	// Type is the type of flake reference. Some valid types are "indirect",
 	// "path", "file", "git", "tarball", and "github".
 	Type string `json:"type,omitempty"`
@@ -83,22 +83,22 @@ type FlakeRef struct {
 // ParseFlakeRef does not guarantee that a parsed flakeref is valid or that an
 // error indicates an invalid flakeref. Use the "nix flake metadata" command or
 // the parseFlakeRef builtin function to validate a flakeref.
-func ParseFlakeRef(ref string) (FlakeRef, error) {
+func ParseFlakeRef(ref string) (Ref, error) {
 	if ref == "" {
-		return FlakeRef{}, redact.Errorf("empty flake reference")
+		return Ref{}, redact.Errorf("empty flake reference")
 	}
 
 	// Handle path-style references first.
-	parsed := FlakeRef{}
+	parsed := Ref{}
 	if ref[0] == '.' || ref[0] == '/' {
 		if strings.ContainsAny(ref, "?#") {
 			// The Nix CLI does seem to allow paths with a '?'
 			// (contrary to the manual) but ignores everything that
 			// comes after it. This is a bit surprising, so we just
 			// don't allow it at all.
-			return FlakeRef{}, redact.Errorf("path-style flake reference %q contains a '?' or '#'", ref)
+			return Ref{}, redact.Errorf("path-style flake reference %q contains a '?' or '#'", ref)
 		}
-		parsed.Type = FlakeTypePath
+		parsed.Type = TypePath
 		parsed.Path = ref
 		return parsed, nil
 	}
@@ -109,23 +109,23 @@ func ParseFlakeRef(ref string) (FlakeRef, error) {
 	return parsed, err
 }
 
-func parseFlakeURLRef(ref string) (parsed FlakeRef, fragment string, err error) {
+func parseURLRef(ref string) (parsed Ref, fragment string, err error) {
 	// A good way to test how Nix parses a flake reference is to run:
 	//
 	// 	nix eval --json --expr 'builtins.parseFlakeRef "ref"' | jq
 	refURL, err := url.Parse(ref)
 	if err != nil {
-		return FlakeRef{}, "", redact.Errorf("parse flake reference as URL: %v", err)
+		return Ref{}, "", redact.Errorf("parse flake reference as URL: %v", err)
 	}
 
 	switch refURL.Scheme {
 	case "", "flake":
 		// [flake:]<flake-id>(/<rev-or-ref>(/rev)?)?
 
-		parsed.Type = FlakeTypeIndirect
+		parsed.Type = TypeIndirect
 		split, err := splitPathOrOpaque(refURL)
 		if err != nil {
-			return FlakeRef{}, "", redact.Errorf("parse flake reference URL path: %v", err)
+			return Ref{}, "", redact.Errorf("parse flake reference URL path: %v", err)
 		}
 		parsed.ID = split[0]
 		if len(split) > 1 {
@@ -141,37 +141,37 @@ func parseFlakeURLRef(ref string) (parsed FlakeRef, fragment string, err error) 
 	case "path":
 		// [path:]<path>(\?<params)?
 
-		parsed.Type = FlakeTypePath
+		parsed.Type = TypePath
 		if refURL.Path == "" {
 			parsed.Path, err = url.PathUnescape(refURL.Opaque)
 			if err != nil {
-				return FlakeRef{}, "", err
+				return Ref{}, "", err
 			}
 		} else {
 			parsed.Path = refURL.Path
 		}
 	case "http", "https", "file":
 		if isArchive(refURL.Path) {
-			parsed.Type = FlakeTypeTarball
+			parsed.Type = TypeTarball
 		} else {
-			parsed.Type = FlakeTypeFile
+			parsed.Type = TypeFile
 		}
 		parsed.Dir = refURL.Query().Get("dir")
 		parsed.URL = refURL.String()
 	case "tarball+http", "tarball+https", "tarball+file":
-		parsed.Type = FlakeTypeTarball
+		parsed.Type = TypeTarball
 		parsed.Dir = refURL.Query().Get("dir")
 
 		refURL.Scheme = refURL.Scheme[8:] // remove tarball+
 		parsed.URL = refURL.String()
 	case "file+http", "file+https", "file+file":
-		parsed.Type = FlakeTypeFile
+		parsed.Type = TypeFile
 		parsed.Dir = refURL.Query().Get("dir")
 
 		refURL.Scheme = refURL.Scheme[5:] // remove file+
 		parsed.URL = refURL.String()
 	case "git", "git+http", "git+https", "git+ssh", "git+git", "git+file":
-		parsed.Type = FlakeTypeGit
+		parsed.Type = TypeGit
 		q := refURL.Query()
 		parsed.Dir = q.Get("dir")
 		parsed.Ref = q.Get("ref")
@@ -188,18 +188,18 @@ func parseFlakeURLRef(ref string) (parsed FlakeRef, fragment string, err error) 
 		parsed.URL = refURL.String()
 	case "github":
 		if err := parseGitHubFlakeRef(refURL, &parsed); err != nil {
-			return FlakeRef{}, "", err
+			return Ref{}, "", err
 		}
 	default:
-		return FlakeRef{}, "", redact.Errorf("unsupported flake reference URL scheme: %s", redact.Safe(refURL.Scheme))
+		return Ref{}, "", redact.Errorf("unsupported flake reference URL scheme: %s", redact.Safe(refURL.Scheme))
 	}
 	return parsed, refURL.Fragment, nil
 }
 
-func parseGitHubFlakeRef(refURL *url.URL, parsed *FlakeRef) error {
+func parseGitHubFlakeRef(refURL *url.URL, parsed *Ref) error {
 	// github:<owner>/<repo>(/<rev-or-ref>)?(\?<params>)?
 
-	parsed.Type = FlakeTypeGitHub
+	parsed.Type = TypeGitHub
 	split, err := splitPathOrOpaque(refURL)
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func parseGitHubFlakeRef(refURL *url.URL, parsed *FlakeRef) error {
 }
 
 // String encodes the flake reference as a URL-like string. It normalizes
-// the result such that if two FlakeRef values are equal, then their strings
+// the result such that if two Ref values are equal, then their strings
 // will also be equal.
 //
 // There are multiple ways to encode a flake reference. String uses the
@@ -252,14 +252,14 @@ func parseGitHubFlakeRef(refURL *url.URL, parsed *FlakeRef) error {
 //
 // If f is missing a type or has any invalid fields, String returns an empty
 // string.
-func (f FlakeRef) String() string {
+func (f Ref) String() string {
 	switch f.Type {
-	case FlakeTypeFile:
+	case TypeFile:
 		if f.URL == "" {
 			return ""
 		}
 		return "file+" + f.URL
-	case FlakeTypeGit:
+	case TypeGit:
 		if f.URL == "" {
 			return ""
 		}
@@ -282,7 +282,7 @@ func (f FlakeRef) String() string {
 		}
 		url.RawQuery = buildQueryString("ref", f.Ref, "rev", f.Rev, "dir", f.Dir)
 		return url.String()
-	case FlakeTypeGitHub:
+	case TypeGitHub:
 		if f.Owner == "" || f.Repo == "" {
 			return ""
 		}
@@ -292,7 +292,7 @@ func (f FlakeRef) String() string {
 			RawQuery: buildQueryString("host", f.Host, "dir", f.Dir),
 		}
 		return url.String()
-	case FlakeTypeIndirect:
+	case TypeIndirect:
 		if f.ID == "" {
 			return ""
 		}
@@ -302,7 +302,7 @@ func (f FlakeRef) String() string {
 			RawQuery: buildQueryString("dir", f.Dir),
 		}
 		return url.String()
-	case FlakeTypePath:
+	case TypePath:
 		if f.Path == "" {
 			return ""
 		}
@@ -319,7 +319,7 @@ func (f FlakeRef) String() string {
 			url.Opaque = "."
 		}
 		return url.String()
-	case FlakeTypeTarball:
+	case TypeTarball:
 		if f.URL == "" {
 			return ""
 		}
@@ -427,7 +427,7 @@ func buildQueryString(keyval ...string) string {
 	return query.Encode()
 }
 
-// Special values for FlakeInstallable.Outputs.
+// Special values for Installable.Outputs.
 const (
 	// DefaultOutputs specifies that the package-defined default outputs
 	// should be installed.
@@ -437,7 +437,7 @@ const (
 	AllOutputs = "*"
 )
 
-// FlakeInstallable is a Nix command line argument that specifies how to install
+// Installable is a Nix command line argument that specifies how to install
 // a flake. It can be a plain flake reference, or a flake reference with an
 // attribute path and/or output specification.
 //
@@ -452,13 +452,13 @@ const (
 //     curl attribute from the flake on the nixpkgs unstable branch.
 //
 // The flake installable syntax is only valid in Nix command line arguments, not
-// in Nix expressions. See FlakeRef and the [Nix manual for details on the
+// in Nix expressions. See Ref and the [Nix manual for details on the
 // differences between flake references and installables.
 //
 // [Nix manual]: https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix#installables
-type FlakeInstallable struct {
+type Installable struct {
 	// Ref is the flake reference portion of the installable.
-	Ref FlakeRef
+	Ref Ref
 
 	// AttrPath is an attribute path of the flake, encoded as a URL
 	// fragment.
@@ -473,23 +473,23 @@ type FlakeInstallable struct {
 	// the default set of package outputs and all package outputs,
 	// respectively.
 	//
-	// ParseFlakeInstallable cleans the list of outputs by removing empty
+	// ParseInstallable cleans the list of outputs by removing empty
 	// elements and sorting the results. Lists containing a "*" are
 	// simplified to a single "*".
 	Outputs string
 }
 
-// ParseFlakeInstallable parses a flake installable. The raw string must contain
+// ParseInstallable parses a flake installable. The raw string must contain
 // a valid flake reference parsable by ParseFlakeRef, optionally followed by an
 // #attrpath and/or an ^output.
-func ParseFlakeInstallable(raw string) (FlakeInstallable, error) {
+func ParseInstallable(raw string) (Installable, error) {
 	if raw == "" {
-		return FlakeInstallable{}, redact.Errorf("empty flake installable")
+		return Installable{}, redact.Errorf("empty flake installable")
 	}
 
 	// The output spec must be parsed and removed first, otherwise it will
 	// be parsed as part of the flakeref's URL fragment.
-	install := FlakeInstallable{}
+	install := Installable{}
 	raw, install.Outputs = splitOutputSpec(raw)
 	install.Outputs = strings.Join(install.SplitOutputs(), ",") // clean the outputs
 
@@ -503,9 +503,9 @@ func ParseFlakeInstallable(raw string) (FlakeInstallable, error) {
 	}
 
 	var err error
-	install.Ref, install.AttrPath, err = parseFlakeURLRef(raw)
+	install.Ref, install.AttrPath, err = parseURLRef(raw)
 	if err != nil {
-		return FlakeInstallable{}, err
+		return Installable{}, err
 	}
 	return install, nil
 }
@@ -513,7 +513,7 @@ func ParseFlakeInstallable(raw string) (FlakeInstallable, error) {
 // SplitOutputs splits and sorts the comma-separated list of outputs. It skips
 // any empty outputs. If one or more of the outputs is a "*", then the result
 // will be a slice with a single "*" element.
-func (f FlakeInstallable) SplitOutputs() []string {
+func (f Installable) SplitOutputs() []string {
 	if f.Outputs == "" {
 		return []string{}
 	}
@@ -540,8 +540,8 @@ func (f FlakeInstallable) SplitOutputs() []string {
 // will also be equal.
 //
 // String always cleans the outputs spec as described by the Outputs field's
-// documentation. The same normalization rules from FlakeRef.String still apply.
-func (f FlakeInstallable) String() string {
+// documentation. The same normalization rules from Ref.String still apply.
+func (f Installable) String() string {
 	str := f.Ref.String()
 	if str == "" {
 		return ""
@@ -551,7 +551,7 @@ func (f FlakeInstallable) String() string {
 		if err != nil {
 			// This should never happen. Even an empty string is a
 			// valid URL.
-			panic("invalid URL from FlakeRef.String: " + str)
+			panic("invalid URL from Ref.String: " + str)
 		}
 		url.Fragment = f.AttrPath
 		str = url.String()
