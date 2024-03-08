@@ -21,6 +21,26 @@
         }
       }
     },
+    "just@1.24.0": {
+      "last_modified": "2024-02-24T23:06:34Z",
+      "resolved": "github:NixOS/nixpkgs/9a9dae8f6319600fa9aebde37f340975cab4b8c0#just",
+      "source": "devbox-search",
+      "version": "1.24.0",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/4y0018ypsv9psa73sz6na2806ndpx5sf-just-1.24.0"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/gafx9wd70rzrk16jwm1fdmvs0y15knzk-just-1.24.0"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/imhg52m87050xjs76mkdlql422n28kvg-just-1.24.0"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/92k9inba4i5bs7cp0kh99y1f93v407v0-just-1.24.0"
+        }
+      }
+    },
     "runx:golangci/golangci-lint@latest": {
       "resolved": "golangci/golangci-lint@v1.56.2",
       "version": "v1.56.2"
