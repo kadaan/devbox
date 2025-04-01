@@ -36,10 +36,12 @@ patch_store_path() {
 # -uu search ignored and hidden files
 # -l list filenames
 # -F exact substring search (faster, no escaping needed)
-files="$(rg -uu -l -F "$pkg" "$out")"
+files="$(rg -uu -l -F "$pkg" "$out")" || true
 count="$(echo "$files" | wc -l)"
 sedexpr="s|$pkg|$out|g"
 echo "patching files with old store path references count=$count sed=$sedexpr"
 for f in $files; do
-	patch_store_path "$f"
+	if [[ "$f" != "" ]]; then
+		patch_store_path "$f"
+	fi
 done
