@@ -5,6 +5,9 @@
     "go":                          "latest",
     "runx:golangci/golangci-lint": "latest",
     "runx:mvdan/gofumpt":          "latest",
+    "zig":                         "0.13.0",
+    "just":                        "1.39.0",
+    "lipo-go":                     "0.9.3"
   },
   "env": {
     "GOENV": "off",
@@ -19,6 +22,7 @@
       "set --erase CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK",
     ],
     "scripts": {
+      "build_script": "\"$DEVBOX_PROJECT_ROOT/build.sh\" \"$@\"",
       // Build devbox for the current platform
       "build":              "go build -o dist/devbox ./cmd/devbox",
       "build-darwin-amd64": "GOOS=darwin GOARCH=amd64 go build -o dist/devbox-darwin-amd64 ./cmd/devbox",

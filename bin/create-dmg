@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# create-dmg packages the aws-okta CLI binary for macOS
+# using Apple's signing and notarizing process
+#
+
+set -euo pipefail
+
+get_apple_id() {
+  op read --account $ONE_PASSWORD_ACCOUNT "op://Mobile/dyuxc3tcdzfd47jfhcwks622ei/username"
+}
+
+get_apple_password() {
+  op read --account $ONE_PASSWORD_ACCOUNT "op://Mobile/dyuxc3tcdzfd47jfhcwks622ei/Developer/App-specific Password"
+}
+
+get_cert_id() {
+  op read --account $ONE_PASSWORD_ACCOUNT "op://Mobile/dyuxc3tcdzfd47jfhcwks622ei/Developer/Certificate Id"
+}
+
+get_team_id() {
+  op read --account $ONE_PASSWORD_ACCOUNT "op://Mobile/dyuxc3tcdzfd47jfhcwks622ei/Developer/Team Id"
+}
+
+SOURCE_BIN="$1"
+TARGET_BIN="$2"
+BIN_NAME="$(basename $TARGET_BIN)"
+APPLE_ID_USERNAME="${APPLE_ID_USERNAME:-$(get_apple_id)}"
+APPLE_ID_APP_PASSWORD="${APPLE_ID_APP_PASSWORD:-$(get_apple_password)}"
+CERT_ID="${CERT_ID:-$(get_cert_id)}"
+TEAM_ID="${TEAM_ID:-$(get_team_id)}"
+BUNDLE_ID="${BUNDLE_ID:-"com.ensighten.$BIN_NAME"}"
+
+tmpdir="$(mktemp -d)"
+trap "rm -rf $tmpdir" EXIT
+
+src_path="$tmpdir/$BIN_NAME"
+dmg_path="$tmpdir/$BIN_NAME.dmg"
+cp -a $SOURCE_BIN $src_path
+
+echo "Signing binary"
+codesign --options runtime --timestamp --sign "$CERT_ID" --force "$src_path"
+
+echo "Creating dmg"
+hdiutil create -quiet -srcfolder "$src_path" "$dmg_path"
+
+echo "Signing dmg"
+codesign --timestamp --sign "$CERT_ID" "$dmg_path"
+
+echo "Submitting notorization request"
+/Applications/Xcode.app/Contents/Developer/usr/bin/notarytool submit --team-id "$TEAM_ID" --apple-id "$APPLE_ID_USERNAME" --password "$APPLE_ID_APP_PASSWORD" --wait "$dmg_path"
+if [[ $? != 0 ]] ; then
+  echo "Failed to submit notorization request"
+  exit 1
+fi
+
+hdiutil attach "$dmg_path"
+mkdir -p "$(dirname $TARGET_BIN)"
+cp -r -f "/Volumes/$BIN_NAME/$BIN_NAME" "$TARGET_BIN"
+hdiutil detach "/Volumes/$BIN_NAME"
+chmod 755 "$TARGET_BIN"

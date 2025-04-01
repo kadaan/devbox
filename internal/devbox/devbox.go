@@ -325,7 +325,7 @@ func (d *Devbox) RunScript(ctx context.Context, envOpts devopt.EnvOptions, cmdNa
 		env["DEVBOX_RUN_CMD"] = strings.Join(append([]string{cmdName}, cmdArgs...), " ")
 	}
 
-	return nix.RunScript(d.projectDir, strings.Join(cmdWithArgs, " "), env)
+	return nix.RunScript(ctx, d.projectDir, cmdWithArgs, env)
 }
 
 // Install ensures that all the packages in the config are installed

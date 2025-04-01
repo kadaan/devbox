@@ -4,12 +4,17 @@
 package boxcli
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"io"
 	"math"
+	"net/url"
+	"slices"
 	"strings"
+	"text/tabwriter"
 
-	"github.com/samber/lo"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 
 	"go.jetpack.io/devbox/internal/boxcli/usererr"
@@ -89,29 +94,63 @@ func printSearchResults(
 		pkgs = results.Packages[:int(math.Min(10, float64(len(results.Packages))))]
 	}
 
+	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
+
+	tableWriter := table.NewWriter()
+	tableWriter.AppendHeader(table.Row{"Package", "Versions", "Platforms"}, rowConfigAutoMerge)
 	for _, pkg := range pkgs {
-		nonEmptyVersions := []string{}
-		for i, v := range pkg.Versions {
-			if !showAll && i >= trimmedVersionsLength {
+		systemKey := ""
+		var versions []string
+		var systems []string
+		for i, pkgVersion := range pkg.Versions {
+			if pkgVersion.Version == "" {
+				continue
+			}
+			if !showAll && i >= 10 {
 				resultsAreTrimmed = true
 				break
 			}
-			if v.Version != "" {
-				nonEmptyVersions = append(nonEmptyVersions, v.Version)
+
+			var currentSystems []string
+			for _, sys := range pkgVersion.Systems {
+				currentSystems = append(currentSystems, sys.System)
 			}
+			slices.Sort(currentSystems)
+			key := strings.Join(currentSystems, " ")
+			if systemKey != key && systemKey != "" {
+				versionStr := columnize(versions, 2)
+				versionLines := strings.Count(versionStr, "\n")
+				systemColumns := 1
+				if versionLines < len(systems) {
+					systemColumns = 2
+				}
+				tableWriter.AppendRow(table.Row{pkg.Name, columnize(versions, 2), columnize(systems, systemColumns)}, rowConfigAutoMerge)
+				versions = nil
+			}
+			systemKey = key
+			versions = append(versions, pkgVersion.Version)
+			systems = currentSystems
 		}
 
-		versionString := ""
-		if len(nonEmptyVersions) > 0 {
-			ellipses := lo.Ternary(resultsAreTrimmed && pkg.NumVersions > trimmedVersionsLength, " ...", "")
-			if showAll {
-				versionString = fmt.Sprintf("\n > %s \n", strings.Join(nonEmptyVersions, "\n > "))
-			} else {
-				versionString = fmt.Sprintf(" (%s%s)", strings.Join(nonEmptyVersions, ", "), ellipses)
+		if len(versions) > 0 {
+			versionStr := columnize(versions, 2)
+			versionLines := strings.Count(versionStr, "\n")
+			systemColumns := 1
+			if versionLines < len(systems) {
+				systemColumns = 2
 			}
+			tableWriter.AppendRow(table.Row{pkg.Name, columnize(versions, 2), columnize(systems, systemColumns)}, rowConfigAutoMerge)
 		}
-		fmt.Fprintf(w, "* %s %s\n", pkg.Name, versionString)
 	}
+
+	tableWriter.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 1, AutoMerge: true, VAlign: text.VAlignMiddle},
+		{Number: 2, AutoMerge: true, Align: text.AlignJustify, AlignHeader: text.AlignCenter},
+		{Number: 3, AutoMerge: true, Align: text.AlignJustify, AlignHeader: text.AlignCenter},
+	})
+	tableWriter.SetStyle(table.StyleLight)
+	tableWriter.Style().Options.SeparateRows = true
+	fmt.Println(tableWriter.Render())
 
 	if resultsAreTrimmed {
 		fmt.Println()
@@ -121,6 +160,30 @@ func printSearchResults(
 				"show all.\n\n",
 		)
 	}
+	fmt.Printf("For more information go to: https://www.nixhub.io/search?q=%s\n\n", url.QueryEscape(query))
 
 	return nil
+}
+
+func columnize(data []string, maxColumns int) string {
+	columns := maxColumns
+	if len(data) <= columns {
+		columns = 1
+	}
+
+	buf := bytes.NewBufferString("")
+	var versionsGroup []string
+	writer := tabwriter.NewWriter(buf, 0, 8, 1, '\t', tabwriter.AlignRight)
+	for _, version := range data {
+		if len(versionsGroup) == columns {
+			_, _ = fmt.Fprintf(writer, "%s\n", strings.Join(versionsGroup, "\t"))
+			versionsGroup = nil
+		}
+		versionsGroup = append(versionsGroup, version)
+	}
+	if len(versionsGroup) > 0 {
+		_, _ = fmt.Fprintf(writer, "%s\n", strings.Join(versionsGroup, "\t"))
+	}
+	_ = writer.Flush()
+	return buf.String()
 }

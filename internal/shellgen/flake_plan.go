@@ -94,7 +94,7 @@ func newGlibcPatchFlake(nixpkgsGlibcRev string, packages []*devpkg.Package) (gli
 	patchFlake := glibcPatchFlake{
 		DevboxFlake: flake.Ref{
 			Type:  flake.TypeGitHub,
-			Owner: "jetify-com",
+			Owner: "kadaan",
 			Repo:  "devbox",
 			Ref:   build.Version,
 		},
@@ -110,7 +110,7 @@ func newGlibcPatchFlake(nixpkgsGlibcRev string, packages []*devpkg.Package) (gli
 			slog.Error("can't find the local devbox flake for patching, falling back to the latest github release", "err", err)
 			patchFlake.DevboxFlake = flake.Ref{
 				Type:  flake.TypeGitHub,
-				Owner: "jetify-com",
+				Owner: "kadaan",
 				Repo:  "devbox",
 			}
 		} else {

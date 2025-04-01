@@ -23,6 +23,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-envparse v0.1.0
+	github.com/jedib0t/go-pretty/v6 v6.5.4
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
@@ -45,6 +46,7 @@ require (
 	golang.org/x/mod v0.18.0
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/sync v0.10.0
+	golang.org/x/text v0.21.0
 	golang.org/x/tools v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -131,6 +133,5 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 )

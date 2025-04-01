@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"syscall"
 	"time"
 
@@ -45,6 +46,11 @@ type Config struct {
 
 const defaultInitHook = "echo 'Welcome to devbox!' > /dev/null"
 
+func sanitizeVersion(version string) string {
+	var re = regexp.MustCompile(`(.+)-ens\d+$`)
+	return re.ReplaceAllString(version, "$1")
+}
+
 func DefaultConfig() *Config {
 	cfg, err := loadBytes([]byte(fmt.Sprintf(`{
 		"$schema": "https://raw.githubusercontent.com/jetify-com/devbox/%s/.schema/devbox.schema.json",
@@ -61,7 +67,7 @@ func DefaultConfig() *Config {
 		}
 	}
 	`,
-		lo.Ternary(build.IsDev, "main", build.Version),
+		lo.Ternary(build.IsDev, "main", sanitizeVersion(build.Version)),
 		defaultInitHook,
 	)))
 	if err != nil {

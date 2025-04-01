@@ -7,10 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"io"
 	"net/http"
 	"net/url"
 	"runtime"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.jetpack.io/devbox/internal/build"
@@ -37,13 +40,71 @@ func (c *client) Search(ctx context.Context, query string) (*SearchResults, erro
 		return nil, fmt.Errorf("query should not be empty")
 	}
 
-	endpoint, err := url.JoinPath(c.host, "v1/search")
+	endpoint, err := url.JoinPath(c.host, "v2/search")
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	searchURL := endpoint + "?q=" + url.QueryEscape(query)
 
-	return execGet[SearchResults](ctx, searchURL)
+	searchResults, err := execGet[SearchResultsV2](ctx, searchURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if searchResults == nil || searchResults.TotalResults == 0 {
+		return nil, ErrNotFound
+	}
+
+	results := &SearchResults{}
+	for _, result := range searchResults.Results {
+		endpoint, err = url.JoinPath(c.host, "v2/pkg")
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		resolveURL := endpoint + "?name=" + url.QueryEscape(result.Name)
+
+		packageInfo, resolveErr := execGet[PackageV2](ctx, resolveURL)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+
+		if packageInfo == nil {
+			return nil, ErrNotFound
+		}
+
+		results.NumResults++
+		versions := make([]PackageVersion, len(packageInfo.Releases))
+		for i, release := range packageInfo.Releases {
+			systems := make(map[string]PackageInfo, len(release.Platforms))
+			for _, platform := range release.Platforms {
+				arch := strings.ReplaceAll(platform.Arch, "-", "_")
+				if arch == "arm64" {
+					arch = "aarch64"
+				}
+				os := cases.Lower(language.English).String(platform.OS)
+				if os == "macos" {
+					os = "darwin"
+				}
+				system := arch + "-" + os
+				systems[system] = PackageInfo{
+					System: system,
+				}
+			}
+			versions[i] = PackageVersion{
+				PackageInfo: PackageInfo{
+					Version: release.Version,
+				},
+				Systems: systems,
+			}
+		}
+		results.Packages = append(results.Packages, Package{
+			Name:        packageInfo.Name,
+			NumVersions: len(packageInfo.Releases),
+			Versions:    versions,
+		})
+	}
+
+	return results, nil
 }
 
 // Resolve calls the /resolve endpoint of the search service. This returns
