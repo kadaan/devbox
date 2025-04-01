@@ -2,9 +2,13 @@
   "name":        "devbox",
   "description": "Instant, easy, and predictable development environments",
   "packages": {
-    "fd":  "latest",
-    "git": "latest",
-    "go":  "latest"
+    "fd":      "latest",
+    "git":     "latest",
+    "go":      "latest",
+    "zig":     "0.13.0",
+    "just":    "1.39.0",
+    "lipo-go": "0.9.3",
+    "darwin.apple_sdk.frameworks.Security": ""
   },
   "env": {
     "GOENV": "off",
@@ -20,6 +24,7 @@
       "GOBIN=$PWD/dist/tools go install tool"
     ],
     "scripts": {
+      "build_script": "\"$DEVBOX_PROJECT_ROOT/build.sh\" \"$@\"",
       // Build devbox for the current platform
       "build":              "go build -o dist/devbox ./cmd/devbox",
       "build-darwin-amd64": "GOOS=darwin GOARCH=amd64 go build -o dist/devbox-darwin-amd64 ./cmd/devbox",
