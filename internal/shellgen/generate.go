@@ -48,7 +48,7 @@ func GenerateForPrintEnv(ctx context.Context, devbox devboxer) error {
 		return errors.WithStack(err)
 	}
 
-	if plan.needsGlibcPatch() {
+	if plan.needsGlibcPatch(devbox) {
 		patch, err := newGlibcPatchFlake(devbox.Config().NixPkgsCommitHash(), plan.Packages)
 		if err != nil {
 			return redact.Errorf("generate glibc patch flake: %v", err)

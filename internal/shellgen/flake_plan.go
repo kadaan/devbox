@@ -45,16 +45,16 @@ func newFlakePlan(ctx context.Context, devbox devboxer) (*flakePlan, error) {
 	}
 
 	return &flakePlan{
-		FlakeInputs: flakeInputs(ctx, packages),
+		FlakeInputs: flakeInputs(ctx, packages, devbox),
 		Stdenv:      devbox.Lockfile().Stdenv(),
 		Packages:    packages,
 		System:      nix.System(),
 	}, nil
 }
 
-func (f *flakePlan) needsGlibcPatch() bool {
+func (f *flakePlan) needsGlibcPatch(devbox devboxer) bool {
 	for _, in := range f.FlakeInputs {
-		if in.Ref == glibcPatchFlakeRef {
+		if in.Ref == glibcPatchFlakeRef(devbox) {
 			return true
 		}
 	}

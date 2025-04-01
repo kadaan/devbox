@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go.jetpack.io/devbox/internal/debug"
 	"io/fs"
 	"log/slog"
 	"os/exec"
@@ -181,6 +182,12 @@ func (p *patchelf) run(ctx context.Context, elf string) ([]byte, error) {
 	}
 	if p.Output != "" {
 		cmd.Args = append(cmd.Args, "--output", p.Output)
+	}
+	if debug.IsEnabled() {
+		cmd.Args = append(cmd.Args, "--debug")
+		slog.Debug("running patchelf",
+			"args", cmd.Args, "elf", elf,
+		)
 	}
 	cmd.Args = append(cmd.Args, elf)
 	out, err := cmd.Output()

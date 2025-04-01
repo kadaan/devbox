@@ -144,7 +144,8 @@ func (d *DerivationBuilder) build(ctx context.Context, pkg, out *packageFS) erro
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, lookPath("bash"), "-s")
+	slog.Debug("running glibc-patch.bash script")
+	cmd := exec.CommandContext(ctx, lookPath("bash"), "-sx")
 	cmd.Stdin = bytes.NewReader(glibcPatchScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

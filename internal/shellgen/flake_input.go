@@ -14,7 +14,10 @@ import (
 	"go.jetpack.io/devbox/nix/flake"
 )
 
-var glibcPatchFlakeRef = flake.Ref{Type: flake.TypePath, Path: "./glibc-patch"}
+func glibcPatchFlakeRef(devbox devboxer) flake.Ref {
+	outPath := genPath(devbox)
+	return flake.Ref{Type: flake.TypePath, Path: outPath + "/flake/glibc-patch"}
+}
 
 type flakeInput struct {
 	Name     string
@@ -158,7 +161,7 @@ func (f *flakeInput) BuildInputs() ([]string, error) {
 // i.e. have a commit hash and always resolve to the same package/version.
 // Note: inputs returned by this function include plugin packages. (php only for now)
 // It's not entirely clear we always want to add plugin packages to the top level
-func flakeInputs(ctx context.Context, packages []*devpkg.Package) []flakeInput {
+func flakeInputs(ctx context.Context, packages []*devpkg.Package, devbox devboxer) []flakeInput {
 	defer trace.StartRegion(ctx, "flakeInputs").End()
 
 	var flakeInputs keyedSlice
@@ -183,9 +186,10 @@ func flakeInputs(ctx context.Context, packages []*devpkg.Package) []flakeInput {
 		// glibc-patched flake input. This input refers to the
 		// glibc-patch.nix flake.
 		if pkg.Patch {
-			nixpkgsGlibc := flakeInputs.getOrAppend(glibcPatchFlakeRef.String())
+			ref := glibcPatchFlakeRef(devbox)
+			nixpkgsGlibc := flakeInputs.getOrAppend(ref.String())
 			nixpkgsGlibc.Name = "glibc-patch"
-			nixpkgsGlibc.Ref = glibcPatchFlakeRef
+			nixpkgsGlibc.Ref = ref
 			nixpkgsGlibc.Packages = append(nixpkgsGlibc.Packages, pkg)
 			continue
 		}
