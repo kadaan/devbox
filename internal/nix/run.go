@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
 	"syscall"
 
@@ -32,7 +31,7 @@ func RunScript(ctx context.Context, projectDir string, cmdWithArgs []string, env
 	cmdWithArgs[0] = "\"" + cmdWithArgs[0] + "\""
 	cmdWithArgsStr := strings.Join(cmdWithArgs, " ")
 
-	// Try to find sh in the PATH, if not, default to a well known absolute path.
+	// Try to find sh in the PATH, if not, default to a well-known absolute path.
 	shPath := cmdutil.GetPathOrDefault("sh", "/bin/sh")
 	cmd := exec.CommandContext(ctx, shPath, "-c", cmdWithArgsStr)
 	cmd.Env = envPairs
@@ -40,28 +39,9 @@ func RunScript(ctx context.Context, projectDir string, cmdWithArgs []string, env
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	c := make(chan os.Signal, 1)
-
-	// Propagate all signals to the process group.
-	signal.Notify(c)
-
-	defer func() {
-		signal.Stop(c)
-	}()
-	go func() {
-		select {
-		case s := <-c:
-			// Propagate the signal to the process group.
-			signum := s.(syscall.Signal)
-			err := syscall.Kill(-cmd.Process.Pid, signum)
-			if err != nil {
-				slog.Debug("Failed to signal process group", "signum", signum, "err", err)
-			}
-		case <-ctx.Done():
-		}
-	}()
+	cmd.Cancel = func() error {
+		return syscall.Kill(cmd.Process.Pid, syscall.SIGTERM)
+	}
 
 	slog.Debug("executing script", "cmd", cmd.Args)
 	// Report error as exec error when executing scripts.
