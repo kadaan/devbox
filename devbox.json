@@ -4,19 +4,34 @@
   "packages": {
     "fd":  "latest",
     "git": "latest",
-    "go":  "latest"
+    "go":  "latest",
+    // Runs scripts/release.ts. Node executes TypeScript directly via type
+    // stripping, so there's no build step and no node_modules — hence -slim,
+    // which is just the runtime without npm and the native-addon toolchain.
+    //
+    // The nodejs plugin is disabled because it adds a Corepack init_hook that
+    // would run on every `devbox run` in this repo. Nothing here uses Corepack;
+    // we only need the `node` binary.
+    "nodejs-slim": {
+      "version":        "latest",
+      "disable_plugin": true
+    }
   },
   "env": {
     "GOENV": "off",
-    "PATH":  "$PWD/dist/tools:$PATH:$PWD/dist"
+    "PATH":  "$PWD/dist/tools:$PATH:$PWD/dist",
+     // Disabling CGO is a workaround for a clang linker error in macos
+     // This should be okay, because Devbox doesn't require CGO
+     // https://github.com/NixOS/nixpkgs/issues/433688#issuecomment-3231557942
+    "CGO_ENABLED": "0",
   },
   "shell": {
     "init_hook": [
       // Remove Go environment variables that might've been inherited from the
       // user's environment and could affect the build.
       "test -z $FISH_VERSION && \\",
-      "unset       CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK || \\",
-      "set --erase CGO_ENABLED GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK",
+      "unset       GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK || \\",
+      "set --erase GO111MODULE GOARCH GOFLAGS GOMOD GOOS GOROOT GOTOOLCHAIN GOWORK",
       "GOBIN=$PWD/dist/tools go install tool"
     ],
     "scripts": {
@@ -50,6 +65,18 @@
         "go mod vendor -o $vendor",
         "nix hash path $vendor >vendor-hash"
       ],
+      "build-flake": "nix build .",
+      // Release the CLI. Both walk every step and prompt for the tag, title and
+      // description; see .agents/skills/release-devbox/SKILL.md.
+      //
+      // draft-release   builds the release and leaves it as a draft
+      // publish-release builds and publishes, or finishes an existing draft
+      // release-changes shows what would ship and the recommended version bump
+      // release-status  shows where a release currently stands
+      "draft-release":   "node scripts/release.ts --draft",
+      "publish-release": "node scripts/release.ts --publish",
+      "release-changes": "node scripts/release.ts --changes",
+      "release-status":  "node scripts/release.ts --status",
       "tidy": ["go mod tidy", "devbox run update-hash"],
       // docker-testscripts runs the testscripts with Docker to exercise
       // Linux-specific tests. It invokes the test binary directly, so any extra

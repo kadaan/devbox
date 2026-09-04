@@ -1,8 +1,10 @@
-if [ -f testdata/shellrc/basic/shellrc ]; then
+if [ -f "testdata/shellrc/basic/shellrc" ]; then
   . "testdata/shellrc/basic/shellrc"
 fi
 # Begin Devbox Post-init Hook
 
+echo_simple () { echo "${simple}"; }
+export -f echo_simple
 export quote="they said, \"lasers\"";
 export simple="value";
 export space="quote me";

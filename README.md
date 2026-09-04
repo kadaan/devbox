@@ -1,7 +1,7 @@
 <picture>
- <source media="(prefers-color-scheme: dark)" srcset="docs/app/static/img/devbox_logo_dark.svg">
- <source media="(prefers-color-scheme: light)" srcset="docs/app/static/img/devbox_logo_light.svg">
- <img alt="Devbox logo." src="docs/app/static/img/devbox_logo_light.svg">
+ <source media="(prefers-color-scheme: dark)" srcset="assets/devbox_logo_dark.svg">
+ <source media="(prefers-color-scheme: light)" srcset="assets/devbox_logo_light.svg">
+ <img alt="Devbox logo." src="assets/devbox_logo_light.svg">
 </picture>
 
 # Devbox
@@ -12,7 +12,7 @@
 ![License: Apache 2.0](https://img.shields.io/github/license/jetify-com/devbox)
 [![version](https://img.shields.io/github/v/release/jetify-com/devbox?color=green&label=version&sort=semver)](https://github.com/jetify-com/devbox/releases)
 [![tests](https://github.com/jetify-com/devbox/actions/workflows/cli-post-release.yml/badge.svg)](https://github.com/jetify-com/devbox/actions/workflows/cli-release.yml?branch=main)
-[![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/)
+[![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://github.com/jetify-com/devbox/blob/main/CONTRIBUTING.md)
 
 ## What is it?
 
@@ -32,15 +32,12 @@ internally powered by `nix`.
 
 ## Demo
 
-You can try out Devbox in your browser using the button below:
-
-[![Open In Devspace](https://www.jetify.com/img/devbox/open-in-devspace.svg)](https://auth.jetify.com/devspace/templates/tutorial)
-
-The example below creates a development environment with `python 2.7` and
+The example below creates a development environment with `python 3.10` and
 `go 1.18`, even though those packages are not installed in the underlying
-machine:
+machine. You can run commands in the environment with `devbox run`, or start an
+interactive shell in it with `devbox shell`:
 
-![screen cast](https://user-images.githubusercontent.com/279789/186491771-6b910175-18ec-4c65-92b0-ed1a91bb15ed.svg)
+![screen cast](assets/devbox_demo.svg)
 
 ## Installing Devbox
 
@@ -51,7 +48,7 @@ curl -fsSL https://get.jetify.com/devbox | bash
 ```
 
 Read more on the
-[Devbox docs](https://www.jetify.com/devbox/docs/installing_devbox/).
+[Devbox docs](https://www.jetify.com/docs/devbox/installing-devbox/).
 
 ## Benefits
 
@@ -97,9 +94,9 @@ ways, including:
 
 ## Quickstart: Fast, Deterministic Shell
 
-In this quickstart we’ll create a development shell with specific tools
+In this quickstart we'll create a development shell with specific tools
 installed. These tools will only be available when using this Devbox shell,
-ensuring we don’t pollute your machine.
+ensuring we don't pollute your machine.
 
 1. Open a terminal in a new empty folder.
 
@@ -137,12 +134,12 @@ ensuring we don’t pollute your machine.
    devbox shell
    ```
 
-   You can tell you’re in a Devbox shell (and not your regular terminal) because
+   You can tell you're in a Devbox shell (and not your regular terminal) because
    the shell prompt changed.
 
 6. Use your favorite tools.
 
-   In this example we installed Python 3.10, so let’s use it.
+   In this example we installed Python 3.10, so let's use it.
 
    ```bash
    python --version
@@ -162,14 +159,14 @@ ensuring we don’t pollute your machine.
    ```
 
 Read more on the
-[Devbox docs Quickstart](https://www.jetify.com/devbox/docs/quickstart/).
+[Devbox docs Quickstart](https://www.jetify.com/docs/devbox/quickstart/).
 
 ## Additional commands
 
 `devbox help` - see all commands
 
 See the
-[CLI Reference](https://www.jetify.com/devbox/docs/cli_reference/devbox/) for
+[CLI Reference](https://www.jetify.com/docs/devbox/cli-reference/devbox) for
 the full list of commands.
 
 ## Join our Developer Community
@@ -191,11 +188,6 @@ Devbox is an opensource project, so contributions are always welcome. Please rea
 ## Related Work
 
 Thanks to [Nix](https://nixos.org/) for providing isolated shells.
-
-## Translation
-
-- [Chinese](./docs/translation/README-zh-CN.md)
-- [Korean](./docs/translation/README-ko-KR.md)
 
 ## License
 

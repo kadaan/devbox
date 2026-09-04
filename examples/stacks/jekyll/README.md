@@ -2,13 +2,12 @@
 
 [![Built with Devbox](https://www.jetify.com/img/devbox/shield_moon.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/)
 
-[![Open In Devspace](https://www.jetify.com/img/devbox/open-in-devspace.svg)](https://auth.jetify.com/devspace/templates/jekyll)
 
 Inspired by [This Example](https://litchipi.github.io/nix/2023/01/12/build-jekyll-blog-with-nix.html)
 
 ## How to Use
 
-1. Install [Devbox](https://www.jetify.com/devbox/docs/installing_devbox/)
+1. Install [Devbox](https://www.jetify.com/docs/devbox/installing-devbox/index)
 1. Create a new project with:
 
     ```bash

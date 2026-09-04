@@ -19,17 +19,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.jetify.com/devbox/internal/devbox/devopt"
-	"go.jetify.com/devbox/internal/devbox/providers/nixcache"
 	"go.jetify.com/devbox/internal/devconfig"
 	"go.jetify.com/devbox/internal/devconfig/configfile"
 	"go.jetify.com/devbox/internal/devpkg"
 	"go.jetify.com/devbox/internal/devpkg/pkgtype"
 	"go.jetify.com/devbox/internal/lock"
-	"go.jetify.com/devbox/internal/setup"
 	"go.jetify.com/devbox/internal/shellgen"
 	"go.jetify.com/devbox/internal/telemetry"
 	"go.jetify.com/devbox/nix/flake"
-	"go.jetify.com/pkg/auth"
 
 	"go.jetify.com/devbox/internal/boxcli/usererr"
 	"go.jetify.com/devbox/internal/debug"
@@ -60,7 +57,7 @@ func (d *Devbox) Outdated(ctx context.Context) (map[string]UpdateVersion, error)
 			continue
 		}
 
-		lockPackage, err := lockfile.FetchResolvedPackage(pkg.Versioned())
+		lockPackage, err := lockfile.FetchResolvedPackage(pkg.Versioned(), false)
 		if err != nil {
 			warnings = append(warnings, fmt.Sprintf("Note: unable to check updates for %s", pkg.CanonicalName()))
 			continue
@@ -472,24 +469,10 @@ func (d *Devbox) installPackages(ctx context.Context, mode installMode) error {
 	}
 
 	if err := d.installNixPackagesToStore(ctx, mode); err != nil {
-		if caches, _ := nixcache.CachedReadCaches(ctx); len(caches) > 0 {
-			err = d.handleInstallFailure(ctx, mode)
-		}
 		return err
 	}
 
 	return d.InstallRunXPackages(ctx)
-}
-
-func (d *Devbox) handleInstallFailure(ctx context.Context, mode installMode) error {
-	ux.Fwarningf(d.stderr, "Failed to build from cache, building from source.\n")
-	telemetry.Event(telemetry.EventNixBuildWithSubstitutersFailed, telemetry.Metadata{
-		Packages: lo.Map(
-			d.InstallablePackages(), func(p *devpkg.Package, _ int) string { return p.Raw }),
-	})
-	nixcache.DisableReadCaches()
-	devpkg.ClearNarInfoCache()
-	return d.installNixPackagesToStore(ctx, mode)
 }
 
 func (d *Devbox) InstallRunXPackages(ctx context.Context) error {
@@ -529,10 +512,6 @@ func (d *Devbox) installNixPackagesToStore(ctx context.Context, mode installMode
 	args := &nix.BuildArgs{
 		Flags:  flags,
 		Writer: d.stderr,
-	}
-	err = d.appendExtraSubstituters(ctx, args)
-	if err != nil {
-		return err
 	}
 
 	packageNames := lo.Map(
@@ -576,54 +555,6 @@ func (d *Devbox) installNixPackagesToStore(ctx context.Context, mode installMode
 	return nil
 }
 
-func (d *Devbox) appendExtraSubstituters(ctx context.Context, args *nix.BuildArgs) error {
-	creds, err := nixcache.CachedCredentials(ctx)
-	if errors.Is(err, auth.ErrNotLoggedIn) {
-		return nil
-	}
-	if err != nil {
-		ux.Fwarningf(d.stderr, "Devbox was unable to authenticate with the Jetify Nix cache. Some packages might be built from source.\n")
-		return nil //nolint:nilerr
-	}
-
-	caches, err := nixcache.CachedReadCaches(ctx)
-	if err != nil {
-		slog.Error("error getting list of caches from the Jetify API, assuming the user doesn't have access to any", "err", err)
-		return nil
-	}
-	if len(caches) == 0 {
-		return nil
-	}
-
-	err = nixcache.Configure(ctx)
-	if errors.Is(err, setup.ErrAlreadyRefused) {
-		slog.Debug("user previously refused to configure nix cache, not re-prompting")
-		return nil
-	}
-	if errors.Is(err, setup.ErrUserRefused) {
-		ux.Finfof(d.stderr, "Skipping cache setup. Run `devbox cache configure` to enable the cache at a later time.\n")
-		return nil
-	}
-	var daemonErr *nix.DaemonError
-	if errors.As(err, &daemonErr) {
-		// Error here to give the user a chance to restart the daemon.
-		return usererr.New("Devbox configured Nix to use a new cache. Please restart the Nix daemon and re-run Devbox.")
-	}
-	// Other errors indicate we couldn't update nix.conf, so just warn and
-	// continue by building from source if necessary.
-	if err != nil {
-		slog.Error("error configuring nix cache", "err", err)
-		ux.Fwarningf(d.stderr, "Devbox was unable to configure Nix to use the Jetify Nix cache. Some packages might be built from source.\n")
-		return nil
-	}
-
-	for _, cache := range caches {
-		args.ExtraSubstituters = append(args.ExtraSubstituters, cache.GetUri())
-	}
-	args.Env = append(args.Env, creds.Env()...)
-	return nil
-}
-
 func (d *Devbox) packagesToInstallInStore(ctx context.Context, mode installMode) ([]*devpkg.Package, error) {
 	defer debug.FunctionTimer().End()
 	// First, get and prepare all the packages that must be installed in this project
@@ -637,7 +568,7 @@ func (d *Devbox) packagesToInstallInStore(ctx context.Context, mode installMode)
 	packagesToInstall := []*devpkg.Package{}
 	storePathsForPackage := map[*devpkg.Package][]string{}
 	for _, pkg := range packages {
-		if mode == update {
+		if mode == update && d.isBeingUpdated(pkg) {
 			packagesToInstall = append(packagesToInstall, pkg)
 			continue
 		}
@@ -664,6 +595,15 @@ func (d *Devbox) packagesToInstallInStore(ctx context.Context, mode installMode)
 	}
 
 	return lo.Uniq(packagesToInstall), nil
+}
+
+func (d *Devbox) isBeingUpdated(pkg *devpkg.Package) bool {
+	for _, u := range d.packagesBeingUpdated {
+		if u.Raw == pkg.Raw {
+			return true
+		}
+	}
+	return false
 }
 
 // moveAllowInsecureFromLockfile will modernize a Devbox project by moving the allow_insecure: boolean

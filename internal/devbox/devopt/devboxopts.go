@@ -34,17 +34,16 @@ type EnvFlags struct {
 	EnvFile string
 }
 
-type PullboxOpts struct {
-	Overwrite   bool
-	URL         string
-	Credentials Credentials
+type EnvrcOpts struct {
+	EnvFlags
+	Force     bool
+	EnvrcDir  string
+	ConfigDir string
 }
 
-type Credentials struct {
-	IDToken string
-	// TODO We can just parse these out, but don't want to add a dependency right now
-	Email string
-	Sub   string
+type PullboxOpts struct {
+	Overwrite bool
+	URL       string
 }
 
 type AddOpts struct {
@@ -62,10 +61,18 @@ type UpdateOpts struct {
 	IgnoreMissingPackages bool
 }
 
+type ShellFormat string
+
+const (
+	ShellFormatBash    ShellFormat = "bash"
+	ShellFormatNushell ShellFormat = "nushell"
+)
+
 type EnvExportsOpts struct {
 	EnvOptions     EnvOptions
 	NoRefreshAlias bool
 	RunHooks       bool
+	ShellFormat    ShellFormat
 }
 
 // EnvOptions configure the Devbox Environment in the `computeEnv` function.

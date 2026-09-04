@@ -8,6 +8,7 @@ import (
 	"flag"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -15,8 +16,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"go.jetify.com/devbox/internal/devbox/devopt"
+	"go.jetify.com/devbox/internal/devconfig"
 	"go.jetify.com/devbox/internal/envir"
 	"go.jetify.com/devbox/internal/shellgen"
+	"go.jetify.com/devbox/internal/xdg"
 )
 
 // updateFlag overwrites golden files with the new test results.
@@ -72,6 +75,10 @@ func testWriteDevboxShellrc(t *testing.T, testdirs []string) {
 				projectDir:      "/path/to/projectDir",
 				userShellrcPath: test.shellrcPath,
 			}
+			// Set shell name based on test name for zsh tests
+			if strings.Contains(test.name, "zsh") {
+				s.name = shZsh
+			}
 			gotPath, err := s.writeDevboxShellrc()
 			if err != nil {
 				t.Fatal("Got writeDevboxShellrc error:", err)
@@ -103,6 +110,86 @@ Generated shellrc != shellrc.golden (-shellrc.golden +shellrc):
 If the new shellrc is correct, you can update the golden file with:
 
 	go test -run "^%s$" -update`), diff, t.Name())
+			}
+		})
+	}
+}
+
+func TestWriteDevboxShellrcAliases(t *testing.T) {
+	cfgJSON := `{
+  "shell": {
+    "init_hook": "echo hi"
+  },
+  "aliases": {
+    "ll": "ls -la",
+    "gs": "git status",
+    "say": "echo it's here"
+  }
+}`
+	dir := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(dir, "devbox.json"), []byte(cfgJSON), 0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := devconfig.Open(dir)
+	if err != nil {
+		t.Fatalf("Open config error: %v", err)
+	}
+
+	tests := []struct {
+		shell name
+		want  []string
+	}{
+		{
+			shell: shBash,
+			want: []string{
+				`alias gs='git status'`,
+				`alias ll='ls -la'`,
+				`alias say='echo it'\''s here'`,
+			},
+		},
+		{
+			shell: shFish,
+			want: []string{
+				`alias gs='git status'`,
+				`alias ll='ls -la'`,
+				`alias say='echo it\'s here'`,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(string(test.shell), func(t *testing.T) {
+			s := &DevboxShell{
+				devbox:     &Devbox{projectDir: dir, cfg: cfg},
+				projectDir: dir,
+				name:       test.shell,
+			}
+			path, err := s.writeDevboxShellrc()
+			if err != nil {
+				t.Fatalf("writeDevboxShellrc error: %v", err)
+			}
+			b, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := string(b)
+
+			// Aliases must appear after the init hook is sourced.
+			hookIdx := strings.Index(got, ".hooks")
+			if hookIdx < 0 {
+				t.Fatalf("hooks not sourced in shellrc:\n%s", got)
+			}
+			for _, line := range test.want {
+				idx := strings.Index(got, line)
+				if idx < 0 {
+					t.Errorf("expected alias line %q in shellrc:\n%s", line, got)
+					continue
+				}
+				if idx < hookIdx {
+					t.Errorf("alias %q injected before init hook was sourced", line)
+				}
 			}
 		})
 	}
@@ -163,5 +250,300 @@ func TestShellPath(t *testing.T) {
 				t.Errorf("Expected shell path %s, but got %s", test.expected, gotPath)
 			}
 		})
+	}
+}
+
+func TestInitShellBinaryFields(t *testing.T) {
+	tests := []struct {
+		name               string
+		path               string
+		env                map[string]string
+		expectedName       name
+		expectedRcPath     string
+		expectedRcPathBase string
+	}{
+		{
+			name:               "bash shell",
+			path:               "/usr/bin/bash",
+			expectedName:       shBash,
+			expectedRcPathBase: ".bashrc",
+		},
+		{
+			name:               "zsh shell without ZDOTDIR",
+			path:               "/usr/bin/zsh",
+			expectedName:       shZsh,
+			expectedRcPathBase: ".zshrc",
+		},
+		{
+			name: "zsh shell with ZDOTDIR",
+			path: "/usr/bin/zsh",
+			env: map[string]string{
+				"ZDOTDIR": "/custom/zsh/config",
+			},
+			expectedName:   shZsh,
+			expectedRcPath: "/custom/zsh/config/.zshrc",
+		},
+		{
+			name:               "ksh shell",
+			path:               "/usr/bin/ksh",
+			expectedName:       shKsh,
+			expectedRcPathBase: ".kshrc",
+		},
+		{
+			name:           "fish shell",
+			path:           "/usr/bin/fish",
+			expectedName:   shFish,
+			expectedRcPath: xdg.ConfigSubpath("fish/config.fish"),
+		},
+		{
+			name:           "dash shell",
+			path:           "/usr/bin/dash",
+			expectedName:   shPosix,
+			expectedRcPath: ".shinit",
+		},
+		{
+			name:               "unknown shell",
+			path:               "/usr/bin/unknown",
+			expectedName:       shUnknown,
+			expectedRcPathBase: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Set up environment variables
+			for k, v := range test.env {
+				t.Setenv(k, v)
+			}
+
+			shell := initShellBinaryFields(test.path)
+
+			if shell.name != test.expectedName {
+				t.Errorf("Expected shell name %v, got %v", test.expectedName, shell.name)
+			}
+
+			if test.expectedRcPath != "" {
+				if shell.userShellrcPath != test.expectedRcPath {
+					t.Errorf("Expected rc path %s, got %s", test.expectedRcPath, shell.userShellrcPath)
+				}
+			} else if test.expectedRcPathBase != "" {
+				// For tests that expect a path relative to home directory,
+				// check that the path ends with the expected basename
+				expectedBasename := test.expectedRcPathBase
+				actualBasename := filepath.Base(shell.userShellrcPath)
+				if actualBasename != expectedBasename {
+					t.Errorf("Expected rc path basename %s, got %s (full path: %s)", expectedBasename, actualBasename, shell.userShellrcPath)
+				}
+			}
+		})
+	}
+}
+
+func TestSetupShellStartupFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a mock zsh shell
+	shell := &DevboxShell{
+		name:            shZsh,
+		userShellrcPath: filepath.Join(tmpDir, ".zshrc"),
+	}
+
+	// Create some test zsh startup files
+	startupFiles := []string{".zshenv", ".zprofile", ".zlogin", ".zlogout", ".zimrc"}
+	for _, filename := range startupFiles {
+		filePath := filepath.Join(tmpDir, filename)
+		err := os.WriteFile(filePath, []byte("# Test content for "+filename), 0o644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", filename, err)
+		}
+	}
+
+	// Create a temporary directory for shell settings
+	shellSettingsDir := t.TempDir()
+
+	// Call setupShellStartupFiles
+	shell.setupShellStartupFiles(shellSettingsDir)
+
+	// Check that all startup files were created in the shell settings directory
+	for _, filename := range startupFiles {
+		expectedPath := filepath.Join(shellSettingsDir, filename)
+		_, err := os.Stat(expectedPath)
+		if err != nil {
+			t.Errorf("Expected startup file %s to be created, but got error: %v", filename, err)
+		}
+
+		// Check that the file contains the expected template content
+		content, err := os.ReadFile(expectedPath)
+		if err != nil {
+			t.Errorf("Failed to read created file %s: %v", filename, err)
+			continue
+		}
+
+		contentStr := string(content)
+		expectedOldPath := filepath.Join(tmpDir, filename)
+		if !strings.Contains(contentStr, expectedOldPath) {
+			t.Errorf("Expected file %s to contain path %s, but content was: %s", filename, expectedOldPath, contentStr)
+		}
+
+		if !strings.Contains(contentStr, "DEVBOX_ZDOTDIR") {
+			t.Errorf("Expected file %s to contain ZDOTDIR handling, but content was: %s", filename, contentStr)
+		}
+	}
+}
+
+func TestWriteDevboxShellrcBash(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a test bash rc file
+	bashrcPath := filepath.Join(tmpDir, ".bashrc")
+	bashrcContent := "# Test bash configuration\nexport TEST_VAR=value"
+	err := os.WriteFile(bashrcPath, []byte(bashrcContent), 0o644)
+	if err != nil {
+		t.Fatalf("Failed to create test .bashrc: %v", err)
+	}
+
+	// Create a mock devbox
+	devbox := &Devbox{projectDir: "/test/project"}
+
+	// Create a bash shell
+	shell := &DevboxShell{
+		devbox:          devbox,
+		name:            shBash,
+		userShellrcPath: bashrcPath,
+		projectDir:      "/test/project",
+		env:             map[string]string{"TEST_ENV": "test_value"},
+	}
+
+	// Write the devbox shellrc
+	shellrcPath, err := shell.writeDevboxShellrc()
+	if err != nil {
+		t.Fatalf("Failed to write devbox shellrc: %v", err)
+	}
+
+	// Read and verify the content
+	content, err := os.ReadFile(shellrcPath)
+	if err != nil {
+		t.Fatalf("Failed to read generated shellrc: %v", err)
+	}
+
+	contentStr := string(content)
+
+	// Check that it does NOT contain zsh-specific ZDOTDIR handling
+	if strings.Contains(contentStr, "DEVBOX_ZDOTDIR") {
+		t.Error("Expected shellrc to NOT contain ZDOTDIR handling for bash")
+	}
+
+	// Check that it sources the original .bashrc
+	if !strings.Contains(contentStr, bashrcPath) {
+		t.Error("Expected shellrc to source the original .bashrc file")
+	}
+}
+
+func TestWriteDevboxShellrcWithZDOTDIR(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Set up ZDOTDIR environment
+	t.Setenv("ZDOTDIR", tmpDir)
+
+	// Create a test zsh rc file in the custom ZDOTDIR
+	customZshrcPath := filepath.Join(tmpDir, ".zshrc")
+	zshrcContent := "# Custom zsh configuration\nexport CUSTOM_VAR=value"
+	err := os.WriteFile(customZshrcPath, []byte(zshrcContent), 0o644)
+	if err != nil {
+		t.Fatalf("Failed to create test .zshrc: %v", err)
+	}
+
+	// Create a mock devbox
+	devbox := &Devbox{projectDir: "/test/project"}
+
+	// Create a zsh shell - this should pick up the ZDOTDIR
+	shell := initShellBinaryFields("/usr/bin/zsh")
+	shell.devbox = devbox
+	shell.projectDir = "/test/project"
+
+	if shell.userShellrcPath != customZshrcPath {
+		t.Error("Expected shellrc path to respect ZDOTDIR")
+	}
+
+	// Write the devbox shellrc
+	shellrcPath, err := shell.writeDevboxShellrc()
+	if err != nil {
+		t.Fatalf("Failed to write devbox shellrc: %v", err)
+	}
+
+	// Read and verify the content
+	content, err := os.ReadFile(shellrcPath)
+	if err != nil {
+		t.Fatalf("Failed to read generated shellrc: %v", err)
+	}
+
+	contentStr := string(content)
+	// Check that it contains zsh-specific ZDOTDIR handling
+	if !strings.Contains(contentStr, "DEVBOX_ZDOTDIR") {
+		t.Error("Expected shellrc to contain ZDOTDIR handling for zsh")
+	}
+
+	// Check that it sources the custom .zshrc
+	if !strings.Contains(contentStr, customZshrcPath) {
+		t.Error("Expected shellrc to source the custom .zshrc file")
+	}
+}
+
+// TestWriteDevboxShellrcZDOTDIRWithSpaces guards against a regression where the
+// `[ -f <path> ]` guard around sourcing the user's shellrc was unquoted. When
+// ZDOTDIR contains spaces (e.g. ".../Application Support/..."), the unquoted
+// path expands to multiple words and `[` fails with "too many arguments", so
+// the user's real shellrc never gets sourced.
+func TestWriteDevboxShellrcZDOTDIRWithSpaces(t *testing.T) {
+	// A ZDOTDIR with a space, like the one some terminal integrations inject.
+	zdotdir := filepath.Join(t.TempDir(), "Application Support", "zsh")
+	if err := os.MkdirAll(zdotdir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("ZDOTDIR", zdotdir)
+
+	zshrcPath := filepath.Join(zdotdir, ".zshrc")
+	if err := os.WriteFile(zshrcPath, []byte("# user zshrc"), 0o644); err != nil {
+		t.Fatalf("Failed to create test .zshrc: %v", err)
+	}
+
+	shell := initShellBinaryFields("/usr/bin/zsh")
+	shell.devbox = &Devbox{projectDir: "/test/project"}
+	shell.projectDir = "/test/project"
+
+	shellrcPath, err := shell.writeDevboxShellrc()
+	if err != nil {
+		t.Fatalf("Failed to write devbox shellrc: %v", err)
+	}
+	content, err := os.ReadFile(shellrcPath)
+	if err != nil {
+		t.Fatalf("Failed to read generated shellrc: %v", err)
+	}
+	contentStr := string(content)
+
+	// The guard must quote the path so the space doesn't split into words.
+	wantGuard := `if [ -f "` + zshrcPath + `" ]; then`
+	if !strings.Contains(contentStr, wantGuard) {
+		t.Errorf("expected quoted guard %q in generated shellrc:\n%s", wantGuard, contentStr)
+	}
+
+	// Run the actual generated guard line through /bin/sh to prove it doesn't
+	// error with "too many arguments" on a space-containing path.
+	var guardLine string
+	for _, line := range strings.Split(contentStr, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "if [ -f ") {
+			guardLine = strings.TrimSpace(line) + " echo sourced; fi"
+			break
+		}
+	}
+	if guardLine == "" {
+		t.Fatalf("could not find guard line in generated shellrc:\n%s", contentStr)
+	}
+	out, err := exec.Command("/bin/sh", "-c", guardLine).CombinedOutput()
+	if err != nil {
+		t.Fatalf("guard line failed to execute (%v): %s\nline: %s", err, out, guardLine)
+	}
+	if strings.TrimSpace(string(out)) != "sourced" {
+		t.Errorf("guard line did not take the true branch; output: %q\nline: %s", out, guardLine)
 	}
 }

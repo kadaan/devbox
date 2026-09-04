@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tailscale/hujson"
 	"go.jetify.com/devbox/internal/devconfig/configfile"
+	"go.jetify.com/devbox/internal/lock"
+	"go.jetify.com/devbox/nix/flake"
 )
 
 func TestOpen(t *testing.T) {
@@ -295,6 +297,106 @@ func mkNestedDirs(t *testing.T) (root, child, nested string) {
 	return root, child, nested
 }
 
+func TestAliases(t *testing.T) {
+	dir := t.TempDir()
+	cfgJSON := `{
+  "shell": {
+    "init_hook": "echo hi"
+  },
+  "aliases": {
+    "ll": "ls -la",
+    "gs": "git status"
+  }
+}`
+	if err := os.WriteFile(filepath.Join(dir, configfile.DefaultName), []byte(cfgJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open error: %v", err)
+	}
+	got := cfg.Aliases()
+	want := map[string]string{"ll": "ls -la", "gs": "git status"}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("Aliases() mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestAliasesEmpty(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(dir, configfile.DefaultName),
+		[]byte(`{"shell": {"init_hook": "echo hi"}}`),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open error: %v", err)
+	}
+	if got := cfg.Aliases(); len(got) != 0 {
+		t.Errorf("Aliases() = %v, want empty", got)
+	}
+}
+
+func TestAliasesInvalid(t *testing.T) {
+	tests := map[string]string{
+		"empty name":         `{"aliases": {"": "ls -la"}}`,
+		"whitespace name":    `{"aliases": {"bad name": "ls -la"}}`,
+		"empty command":      `{"aliases": {"ll": ""}}`,
+		"whitespace command": `{"aliases": {"ll": "   "}}`,
+	}
+	for name, cfgJSON := range tests {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.WriteFile(
+				filepath.Join(dir, configfile.DefaultName), []byte(cfgJSON), 0o644,
+			); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Open(dir); err == nil {
+				t.Errorf("Open(%q) succeeded, want validation error", cfgJSON)
+			}
+		})
+	}
+}
+
+// TestExampleLocalPluginAliases loads the examples/plugins/local project and
+// verifies that aliases defined in the plugin are merged into the parent
+// config, and that an alias defined in the parent overrides the plugin's.
+func TestExampleLocalPluginAliases(t *testing.T) {
+	exampleDir, err := filepath.Abs(
+		filepath.Join("..", "..", "examples", "plugins", "local"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Open(exampleDir)
+	if err != nil {
+		t.Fatalf("Open(%q) error: %v", exampleDir, err)
+	}
+
+	lockfile, err := lock.GetFile(&testLockProject{dir: exampleDir})
+	if err != nil {
+		t.Fatalf("lock.GetFile error: %v", err)
+	}
+	if err := cfg.LoadRecursive(lockfile); err != nil {
+		t.Fatalf("LoadRecursive error: %v", err)
+	}
+
+	want := map[string]string{
+		// Parent devbox.json overrides the plugin's "greet" alias.
+		"greet": "echo greeting-from-parent",
+		// "plugin_only" is contributed solely by the plugin.
+		"plugin_only": "echo from-plugin",
+	}
+	if diff := cmp.Diff(want, cfg.Aliases()); diff != "" {
+		t.Errorf("Aliases() mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestDefault(t *testing.T) {
 	path := filepath.Join(t.TempDir())
 	cfg := DefaultConfig()
@@ -427,3 +529,43 @@ func TestOSExpandIfPossible(t *testing.T) {
 		})
 	}
 }
+
+// TestLoadRecursiveMultipleBuiltinPluginIncludes is a regression test for
+// DEV-16: two explicit built-in plugin includes must not trigger a false
+// "circular or duplicate include detected" error.
+func TestLoadRecursiveMultipleBuiltinPluginIncludes(t *testing.T) {
+	dir := t.TempDir()
+
+	const jsonContent = `{
+		"packages": [],
+		"include": ["plugin:nodejs", "plugin:python"]
+	}`
+	path := filepath.Join(dir, "devbox.json")
+	if err := os.WriteFile(path, []byte(jsonContent), 0o644); err != nil {
+		t.Fatalf("os.WriteFile error: %v", err)
+	}
+
+	cfg, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open error: %v", err)
+	}
+
+	lockfile, err := lock.GetFile(&testLockProject{dir: dir})
+	if err != nil {
+		t.Fatalf("lock.GetFile error: %v", err)
+	}
+
+	if err := cfg.LoadRecursive(lockfile); err != nil {
+		t.Errorf("LoadRecursive returned unexpected error: %v", err)
+	}
+}
+
+// testLockProject satisfies the unexported lock.devboxProject interface for tests.
+type testLockProject struct {
+	dir string
+}
+
+func (p *testLockProject) ConfigHash() (string, error)                              { return "", nil }
+func (p *testLockProject) Stdenv() flake.Ref                                        { return flake.Ref{} }
+func (p *testLockProject) AllPackageNamesIncludingRemovedTriggerPackages() []string { return nil }
+func (p *testLockProject) ProjectDir() string                                       { return p.dir }

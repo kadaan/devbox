@@ -150,8 +150,13 @@ func StartProcessManager(
 		fmt.Fprintf(w, "Starting all services: %s \n", strings.Join(services, ", "))
 	}
 
+	seenPCFiles := make(map[string]bool)
 	for _, s := range availableServices {
-		flags = append(flags, "-f", s.ProcessComposePath)
+		if !seenPCFiles[s.ProcessComposePath] {
+			// Only add -f flag if we haven't seen this file path before
+			flags = append(flags, "-f", s.ProcessComposePath)
+			seenPCFiles[s.ProcessComposePath] = true
+		}
 	}
 
 	flags = append(flags, processComposeConfig.ExtraFlags...)
@@ -167,6 +172,8 @@ func StartProcessManager(
 }
 
 func runProcessManagerInForeground(cmd *exec.Cmd, config *globalProcessComposeConfig, port int, projectDir string, w io.Writer) error {
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start process-compose: %w", err)
 	}
@@ -309,8 +316,8 @@ func AttachToProcessManager(ctx context.Context, w io.Writer, projectDir string,
 		return err
 	}
 
-	defer configFile.Close()
 	config := readGlobalProcessComposeJSON(configFile)
+	configFile.Close() // release the lock as this command is long running
 
 	project, ok := config.Instances[projectDir]
 	if !ok {

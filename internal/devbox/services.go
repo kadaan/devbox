@@ -3,6 +3,7 @@ package devbox
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"text/tabwriter"
 
@@ -123,9 +124,9 @@ func (d *Devbox) ListServices(ctx context.Context, runInCurrentShell bool) error
 		fmt.Fprintln(d.stderr, "Error listing services: ", err)
 	} else {
 		fmt.Fprintln(d.stderr, "Services running in process-compose:")
-		fmt.Fprintln(tw, "NAME\tSTATUS\tEXIT CODE")
+		fmt.Fprintln(tw, "PID\tNAME\tNAMESPACE\tSTATUS\tAGE\tHEALTH\tRESTARTS\tEXIT CODE")
 		for _, s := range pcSvcs {
-			fmt.Fprintf(tw, "%s\t%s\t%d\n", s.Name, s.Status, s.ExitCode)
+			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d\n", s.PID, s.Name, s.Namespace, s.Status, s.Age, s.Health, s.Restarts, s.ExitCode)
 		}
 		tw.Flush()
 	}
@@ -271,4 +272,14 @@ func (d *Devbox) StartProcessManager(
 func (d *Devbox) runDevboxServicesScript(ctx context.Context, cmdArgs []string) error {
 	cmdArgs = append([]string{"services"}, cmdArgs...)
 	return d.RunScript(ctx, devopt.EnvOptions{}, "devbox", cmdArgs)
+}
+
+func (d *Devbox) ShowProcessComposePort(ctx context.Context, writer io.Writer) error {
+	port, err := services.GetProcessManagerPort(d.projectDir)
+	if err != nil {
+		return err // Error already contains user-friendly message from services layer
+	}
+
+	fmt.Fprintf(writer, "%d\n", port)
+	return nil
 }

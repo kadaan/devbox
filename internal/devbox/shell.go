@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -29,7 +30,7 @@ import (
 
 //go:embed shellrc.tmpl
 var shellrcText string
-var shellrcTmpl = template.Must(template.New("shellrc").Parse(shellrcText))
+var shellrcTmpl = template.Must(template.New("shellrc").Funcs(template.FuncMap{"dirPath": filepath.Dir}).Parse(shellrcText))
 
 //go:embed shellrc_fish.tmpl
 var fishrcText string
@@ -228,8 +229,8 @@ func (s *DevboxShell) Run() error {
 		return errors.WithStack(err)
 	}
 
-	// Link other files that affect the shell settings and environments.
-	s.linkShellStartupFiles(filepath.Dir(shellrc))
+	// Setup other files that affect the shell settings and environments.
+	s.setupShellStartupFiles(filepath.Dir(shellrc))
 	extraEnv, extraArgs := s.shellRCOverrides(shellrc)
 	env := s.env
 	for k, v := range extraEnv {
@@ -323,6 +324,9 @@ func (s *DevboxShell) writeDevboxShellrc() (path string, err error) {
 		ShellStartTime   string
 		HistoryFile      string
 		ExportEnv        string
+		ShellName        string
+
+		ShellAliases []string
 
 		RefreshAliasName   string
 		RefreshCmd         string
@@ -334,7 +338,9 @@ func (s *DevboxShell) writeDevboxShellrc() (path string, err error) {
 		HooksFilePath:      shellgen.ScriptPath(s.projectDir, shellgen.HooksFilename),
 		ShellStartTime:     telemetry.FormatShellStart(s.shellStartTime),
 		HistoryFile:        strings.TrimSpace(s.historyFile),
-		ExportEnv:          exportify(s.env),
+		ExportEnv:          exportify(s.devbox.stderr, s.env),
+		ShellName:          string(s.name),
+		ShellAliases:       s.aliasLines(),
 		RefreshAliasName:   s.devbox.refreshAliasName(),
 		RefreshCmd:         s.devbox.refreshCmd(),
 		RefreshAliasEnvVar: s.devbox.refreshAliasEnvVar(),
@@ -347,12 +353,55 @@ func (s *DevboxShell) writeDevboxShellrc() (path string, err error) {
 	return path, nil
 }
 
-// linkShellStartupFiles will link files used by the shell for initialization.
-// We choose to link instead of copy so that changes made outside can be reflected
-// within the devbox shell.
+// aliasLines returns the shell `alias` commands for the aliases defined in
+// devbox.json, sorted by alias name for deterministic output. The returned
+// lines use the current shell's builtin `alias` command (which is compatible
+// across bash, zsh, and fish) and are injected into the shellrc after the init
+// hook is sourced. It returns nil when there are no aliases or no config.
+func (s *DevboxShell) aliasLines() []string {
+	if s.devbox == nil || s.devbox.Config() == nil {
+		return nil
+	}
+	aliases := s.devbox.Config().Aliases()
+	if len(aliases) == 0 {
+		return nil
+	}
+
+	names := make([]string, 0, len(aliases))
+	for name := range aliases {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	lines := make([]string, 0, len(names))
+	for _, name := range names {
+		lines = append(lines, fmt.Sprintf("alias %s=%s", name, s.quoteAliasValue(aliases[name])))
+	}
+	return lines
+}
+
+// quoteAliasValue single-quotes an alias value so it is passed verbatim to the
+// shell's `alias` builtin, escaping any embedded quotes for the current shell.
+func (s *DevboxShell) quoteAliasValue(value string) string {
+	if s.name == shFish {
+		// Inside fish single quotes, only \\ and \' are escape sequences.
+		value = strings.ReplaceAll(value, `\`, `\\`)
+		value = strings.ReplaceAll(value, `'`, `\'`)
+		return "'" + value + "'"
+	}
+	// POSIX shells (bash/zsh/ksh): close the quote, emit an escaped quote,
+	// then reopen, i.e. ' -> '\''.
+	value = strings.ReplaceAll(value, `'`, `'\''`)
+	return "'" + value + "'"
+}
+
+// setupShellStartupFiles creates initialization files for the shell by sourcing the user's originals.
+// We do this instead of linking or copying, so that we can set correct ZDOTDIR when sourcing
+// user's config files which may use the ZDOTDIR env var inside them.
+// This also allows us to make sure any devbox config is run after correctly sourcing the user's config.
 //
 // We do not link the .{shell}rc files, since devbox modifies them. See writeDevboxShellrc
-func (s *DevboxShell) linkShellStartupFiles(shellSettingsDir string) {
+func (s *DevboxShell) setupShellStartupFiles(shellSettingsDir string) {
 	// For now, we only need to do this for zsh shell
 	if s.name == shZsh {
 		// List of zsh startup files: https://zsh.sourceforge.io/Intro/intro_3.html
@@ -364,21 +413,52 @@ func (s *DevboxShell) linkShellStartupFiles(shellSettingsDir string) {
 
 		for _, filename := range filenames {
 			// The userShellrcPath should be set to ZDOTDIR already.
-			fileOld := filepath.Join(filepath.Dir(s.userShellrcPath), filename)
-			_, err := os.Stat(fileOld)
+			userFile := filepath.Join(filepath.Dir(s.userShellrcPath), filename)
+			_, err := os.Stat(userFile)
 			if errors.Is(err, fs.ErrNotExist) {
 				// this file may not be relevant for the user's setup.
 				continue
 			}
 			if err != nil {
-				slog.Debug("os.Stat error for %s is %v", fileOld, err)
+				slog.Debug("os.Stat error for %s is %v", userFile, err)
 			}
 
 			fileNew := filepath.Join(shellSettingsDir, filename)
-			cmd := exec.Command("cp", fileOld, fileNew)
-			if err := cmd.Run(); err != nil {
-				// This is a best-effort operation. If there's an error then log it for visibility but continue.
-				slog.Error("error copying zsh setting file", "from", fileOld, "to", fileNew, "err", err)
+
+			// Create template content that sources the original file
+			templateContent := `if [[ -f "{{.UserFile}}" ]]; then
+    local DEVBOX_ZDOTDIR="$ZDOTDIR"
+    export ZDOTDIR="{{.ZDOTDIR}}"
+    . "{{.UserFile}}"
+    export ZDOTDIR="$DEVBOX_ZDOTDIR"
+fi`
+
+			// Parse and execute the template
+			tmpl, err := template.New("shellrc").Parse(templateContent)
+			if err != nil {
+				slog.Error("error parsing template for zsh setting file", "filename", filename, "err", err)
+				continue
+			}
+
+			// Create the new file with template content
+			file, err := os.Create(fileNew)
+			if err != nil {
+				slog.Error("error creating zsh setting file", "filename", filename, "err", err)
+				continue
+			}
+			defer file.Close()
+
+			// Execute template with data
+			data := struct {
+				UserFile string
+				ZDOTDIR  string
+			}{
+				UserFile: userFile,
+				ZDOTDIR:  filepath.Dir(s.userShellrcPath),
+			}
+
+			if err := tmpl.Execute(file, data); err != nil {
+				slog.Error("error executing template for zsh setting file", "filename", filename, "err", err)
 				continue
 			}
 		}
