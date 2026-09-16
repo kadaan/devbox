@@ -30,6 +30,8 @@ func Main(m *testing.M) {
 }
 
 func RunTestscripts(t *testing.T, testscriptsDir string) {
+	startSearchStub(t)
+
 	globPattern := filepath.Join(testscriptsDir, "**/*.test.txt")
 	scripts := globScripts(globPattern)
 	require.NotEmpty(t, scripts, "no test scripts found")

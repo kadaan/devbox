@@ -4,13 +4,17 @@
 package lock
 
 import (
+	"context"
 	"errors"
 	"io/fs"
+	"log/slog"
+	"os"
 	"path/filepath"
 
 	"go.jetify.com/devbox/internal/build"
 	"go.jetify.com/devbox/internal/cachehash"
 	"go.jetify.com/devbox/internal/cuecfg"
+	"go.jetify.com/devbox/internal/nix"
 )
 
 var ignoreShellMismatch = false
@@ -111,6 +115,33 @@ func getCurrentStateHash(args UpdateStateHashFileArgs) (*stateHashFile, error) {
 	return newLock, nil
 }
 
+// devEnvHasCollectedStorePaths reports whether the cached dev environment
+// names store paths that are no longer in the store.
+//
+// The hashes above cannot see this. They hash the cache's bytes, and a garbage
+// collection changes the store without changing the file, so every hash still
+// matches while the environment it describes has holes in it. Checking the
+// store is what turns that silent breakage into an ordinary recompute.
+func devEnvHasCollectedStorePaths(ctx context.Context, projectDir string) (bool, error) {
+	data, err := os.ReadFile(printDevEnvCachePath(projectDir))
+	if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	missing, err := nix.MissingStorePaths(ctx, nix.StorePaths(data))
+	if err != nil {
+		// Nix could not answer, so we cannot tell a collected path from one this
+		// check parsed wrongly. Reporting "collected" on that ambiguity would
+		// recompute the environment on every command, which is worse than
+		// leaving the hashes to decide as they did before this check existed.
+		slog.Debug("could not check dev env store paths", "err", err)
+		return false, nil //nolint:nilerr
+	}
+	return len(missing) > 0, nil
+}
+
 func stateHashFilePath(projectDir string) string {
 	return filepath.Join(projectDir, ".devbox", "state.json")
 }
@@ -119,8 +150,12 @@ func manifestHash(profileDir string) (string, error) {
 	return cachehash.JSONFile(filepath.Join(profileDir, ".devbox/nix/profile/default/manifest.json"))
 }
 
+func printDevEnvCachePath(projectDir string) string {
+	return filepath.Join(projectDir, ".devbox/.nix-print-dev-env-cache")
+}
+
 func printDevEnvCacheHash(profileDir string) (string, error) {
-	return cachehash.JSONFile(filepath.Join(profileDir, ".devbox/.nix-print-dev-env-cache"))
+	return cachehash.JSONFile(printDevEnvCachePath(profileDir))
 }
 
 func getLockfileHash(projectDir string) (string, error) {

@@ -1,0 +1,25 @@
+# The dev environment's closure must be a Nix GC root.
+#
+# The package profile only roots the packages themselves, so without this the
+# stdenv tooling that the environment also puts on PATH -- gnutar, findutils,
+# gzip, the setup hooks -- is collectable. Losing it leaves a dead directory on
+# PATH and a "command not found" with nothing pointing at the collection.
+
+exec devbox add hello
+
+# Computing the environment is what registers the root, so make it happen.
+exec devbox run -- hello
+stdout 'Hello, world!'
+
+# The profile Nix maintains for the environment, which is what makes it a root.
+exists .devbox/nix/devenv-profile/default
+
+# It must resolve into the store rather than dangle. readlink comes from the
+# environment under test, since the testscript PATH is deliberately bare.
+exec devbox run -- readlink -f .devbox/nix/devenv-profile/default
+stdout '/nix/store/'
+
+-- devbox.json --
+{
+  "packages": []
+}

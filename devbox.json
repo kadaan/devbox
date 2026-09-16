@@ -36,7 +36,9 @@
     ],
     "scripts": {
       // Build devbox for the current platform
-      "build":              "go build -o dist/devbox ./cmd/devbox",
+      // DEVBOX_SEARCH_HOST_DEFAULT bakes a search service into the binary, so a
+      // self-hosted proxy needs no environment variable at run time.
+      "build":              "go build -ldflags \"-X go.jetify.com/devbox/internal/build.SearchHost=${DEVBOX_SEARCH_HOST_DEFAULT:-https://search.devbox.sh}\" -o dist/devbox ./cmd/devbox",
       "build-darwin-amd64": "GOOS=darwin GOARCH=amd64 go build -o dist/devbox-darwin-amd64 ./cmd/devbox",
       "build-darwin-arm64": "GOOS=darwin GOARCH=arm64 go build -o dist/devbox-darwin-arm64 ./cmd/devbox",
       "build-linux-amd64":  "GOOS=linux GOARCH=amd64 go build -o dist/devbox-linux-amd64 ./cmd/devbox",

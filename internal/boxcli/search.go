@@ -6,7 +6,6 @@ package boxcli
 import (
 	"bytes"
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/text"
 	"io"
 	"math"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 
 	"go.jetify.com/devbox/internal/boxcli/usererr"
@@ -150,17 +150,23 @@ func printSearchResults(
 	})
 	tableWriter.SetStyle(table.StyleLight)
 	tableWriter.Style().Options.SeparateRows = true
-	fmt.Println(tableWriter.Render())
+	fmt.Fprintln(w, tableWriter.Render())
 
 	if resultsAreTrimmed {
-		fmt.Println()
+		fmt.Fprintln(w)
 		ux.Fwarningf(
 			w,
 			"Showing top 10 results and truncated versions. Use --show-all to "+
 				"show all.\n\n",
 		)
 	}
-	fmt.Printf("For more information go to: https://www.nixhub.io/search?q=%s\n\n", url.QueryEscape(query))
+	// Only when the results came from the index nixhub.io renders. A
+	// self-hosted search host has no page there, and the one this would link to
+	// may not even list the versions just printed.
+	if searcher.ServesNixhub() {
+		fmt.Fprintf(w, "For more information go to: https://www.nixhub.io/search?q=%s\n\n",
+			url.QueryEscape(query))
+	}
 
 	return nil
 }

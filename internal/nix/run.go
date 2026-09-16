@@ -17,6 +17,8 @@ import (
 	"go.jetify.com/devbox/internal/cmdutil"
 )
 
+// RunScript runs cmdWithArgs as one sh command in projectDir; the caller must
+// shell-quote each element.
 func RunScript(ctx context.Context, projectDir string, cmdWithArgs []string, env map[string]string) error {
 	if len(cmdWithArgs) == 0 {
 		return errors.New("attempted to run an empty command or script")
@@ -27,8 +29,6 @@ func RunScript(ctx context.Context, projectDir string, cmdWithArgs []string, env
 		envPairs = append(envPairs, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	// Wrap in quotations since the command's path may contain spaces.
-	cmdWithArgs[0] = "\"" + cmdWithArgs[0] + "\""
 	cmdWithArgsStr := strings.Join(cmdWithArgs, " ")
 
 	// Try to find sh in the PATH, if not, default to a well-known absolute path.

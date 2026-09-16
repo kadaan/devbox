@@ -1,0 +1,38 @@
+{
+  "planned": 0,
+  "ingested": 0,
+  "failed": 0,
+  "skipped": 0,
+  "anomalies": [],
+  "channels": [
+    {
+      "channel": "nixos-unstable-small",
+      "ingested": 4264,
+      "pending": 2902,
+      "failed": 0,
+      "skipped": 1,
+      "newest_release": "nixos-26.11pre1066132.090e478bd648",
+      "newest_release_date": "2026-09-02T09:12:33Z",
+      "newest_attr_count": 149787
+    },
+    {
+      "channel": "nixpkgs-unstable",
+      "ingested": 4217,
+      "pending": 0,
+      "failed": 22,
+      "skipped": 1,
+      "newest_release": "nixpkgs-26.11pre1063758.e8be7818e19a",
+      "newest_release_date": "2026-08-30T01:29:30Z",
+      "newest_attr_count": 149702
+    }
+  ],
+  "head_lag_hours": 72,
+  "unsettled_before_watermark": {
+    "total": 2924,
+    "needs_eval": 2924
+  },
+  "total_attrs": 288291,
+  "total_rows": 1805969,
+  "strict": false,
+  "healthy": true
+}

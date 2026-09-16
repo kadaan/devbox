@@ -67,6 +67,7 @@ func RootCmd() *cobra.Command {
 	command.AddCommand(removeCmd())
 	command.AddCommand(runCmd(runFlagDefaults{}))
 	command.AddCommand(searchCmd())
+	command.AddCommand(searchProxyCmd())
 	command.AddCommand(servicesCmd())
 	command.AddCommand(setupCmd())
 	command.AddCommand(shellCmd(shellFlagDefaults{}))

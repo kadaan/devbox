@@ -1,6 +1,8 @@
 package shellgen
 
 import (
+	"errors"
+	"strings"
 	"testing"
 
 	"go.jetify.com/devbox/internal/devbox/devopt"
@@ -53,4 +55,41 @@ func TestNewGlibcPatchFlake(t *testing.T) {
 	if len(patchFlake.Outputs.Packages) != 1 {
 		t.Errorf("expected 1 package in Outputs, got %d", len(patchFlake.Outputs.Packages))
 	}
+}
+
+func TestDevboxPatchFlakeRef(t *testing.T) {
+	const commit = "597c2f6f3bb0319d08780df0fa3cd257405bd3ff"
+	noSource := func() (string, error) { return "", errors.New("no source dir") }
+
+	t.Run("local source wins", func(t *testing.T) {
+		ref := devboxPatchFlakeRef(commit, func() (string, error) { return "/src/devbox", nil })
+		if got, want := ref.String(), "path:/src/devbox"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("falls back to the commit", func(t *testing.T) {
+		ref := devboxPatchFlakeRef(commit, noSource)
+		if got, want := ref.String(), "github:kadaan/devbox/"+commit; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
+	// A `git describe` string is what broke this: GitHub reads an unresolvable
+	// ref as a SHA and answers 422, failing every shell whose project holds a
+	// package that needs patching.
+	t.Run("never emits a ref GitHub cannot resolve", func(t *testing.T) {
+		for _, notACommit := range []string{
+			"none", "0.0.0-dev", "0.18.0-ens001-1-g597c2f6f", "0.18.0-ens001-1-g597c2f6f-dirty",
+			"597c2f6f", strings.ToUpper(commit),
+		} {
+			ref := devboxPatchFlakeRef(notACommit, noSource)
+			if ref.Ref != "" {
+				t.Errorf("%q was used as a git ref, got %q", notACommit, ref.String())
+			}
+			if got, want := ref.String(), "github:kadaan/devbox"; got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
 }

@@ -299,7 +299,7 @@ func (d *Devbox) ensureStateIsUpToDate(ctx context.Context, mode installMode) er
 	defer trace.StartRegion(ctx, "devboxEnsureStateIsUpToDate").End()
 	defer debug.FunctionTimer().End()
 
-	upToDate, err := d.lockfile.IsUpToDateAndInstalled(isFishShell())
+	upToDate, err := d.lockfile.IsUpToDateAndInstalled(ctx, isFishShell())
 	if err != nil {
 		return err
 	}
@@ -654,48 +654,105 @@ func (d *Devbox) moveAllowInsecureFromLockfile(writer io.Writer, lockfile *lock.
 	return nil
 }
 
+// FixMissingStorePaths fills each package's missing per-system store paths. It
+// saves the lockfile even when it returns an error, so a partial fill survives.
 func (d *Devbox) FixMissingStorePaths(ctx context.Context) error {
-	packages := d.InstallablePackages()
-	for _, pkg := range packages {
+	return d.fixMissingStorePaths(ctx, nix.StorePathsFromInstallable)
+}
+
+func (d *Devbox) fixMissingStorePaths(ctx context.Context, evaluate storePathEvaluator) error {
+	var fillErr error
+	for _, pkg := range d.InstallablePackages() {
 		if !pkg.IsDevboxPackage || pkg.IsRunX() {
 			continue
 		}
-		existingStorePaths, err := pkg.GetResolvedStorePaths()
-		if err != nil {
-			return err
+		if fillErr = d.fillStorePaths(ctx, pkg, evaluate); fillErr != nil {
+			break
 		}
+	}
+	// Save before returning fillErr so a retry keeps the packages already filled.
+	if err := d.lockfile.Save(); err != nil {
+		return err
+	}
+	return fillErr
+}
 
-		if len(existingStorePaths) > 0 {
-			continue
-		}
-
-		installables, err := pkg.Installables()
-		if err != nil {
-			return err
-		}
-
-		outputs := []lock.Output{}
-		for _, installable := range installables {
-			storePaths, err := nix.StorePathsFromInstallable(ctx, installable, pkg.HasAllowInsecure())
-			if err != nil {
-				return err
-			}
-			if len(storePaths) == 0 {
-				return fmt.Errorf("no store paths found for package %s", pkg.Raw)
-			}
-			for _, storePath := range storePaths {
-				parts := nix.NewStorePathParts(storePath)
-				outputs = append(outputs, lock.Output{
-					Path: storePath,
-					Name: parts.Output,
-					// Ugh, not sure this is true, but it's more true than not.
-					Default: true,
-				})
-			}
-		}
-		if err = d.lockfile.SetOutputsForPackage(pkg.Raw, outputs); err != nil {
+func (d *Devbox) fillStorePaths(
+	ctx context.Context,
+	pkg *devpkg.Package,
+	evaluate storePathEvaluator,
+) error {
+	systems, err := pkg.SystemsMissingStorePaths()
+	if err != nil {
+		return err
+	}
+	bySystem, err := outputsForSystems(ctx, pkg, systems, evaluate)
+	if err != nil {
+		return err
+	}
+	for system, outputs := range bySystem {
+		if err := d.lockfile.SetOutputsForPackage(pkg.Raw, system, outputs); err != nil {
 			return err
 		}
 	}
-	return d.lockfile.Save()
+	return nil
+}
+
+// storePathEvaluator returns the store paths of a Nix installable.
+type storePathEvaluator func(ctx context.Context, installable string, allowInsecure bool) ([]string, error)
+
+// outputsForSystems returns pkg's lockfile outputs keyed by system, skipping a
+// non-host system that fails to evaluate and failing on the host's own error.
+func outputsForSystems(
+	ctx context.Context,
+	pkg *devpkg.Package,
+	systems []string,
+	evaluate storePathEvaluator,
+) (map[string][]lock.Output, error) {
+	bySystem := map[string][]lock.Output{}
+	for _, system := range systems {
+		outputs, err := outputsForSystem(ctx, pkg, system, evaluate)
+		if err != nil {
+			if system == nix.System() {
+				return nil, err
+			}
+			slog.Debug("skipping system with no store paths", "pkg", pkg.Raw, "system", system, "err", err)
+			continue
+		}
+		bySystem[system] = outputs
+	}
+	return bySystem, nil
+}
+
+func outputsForSystem(
+	ctx context.Context,
+	pkg *devpkg.Package,
+	system string,
+	evaluate storePathEvaluator,
+) ([]lock.Output, error) {
+	installables, err := pkg.InstallablesForSystem(system)
+	if err != nil {
+		return nil, err
+	}
+
+	outputs := []lock.Output{}
+	for _, installable := range installables {
+		storePaths, err := evaluate(ctx, installable, pkg.HasAllowInsecure())
+		if err != nil {
+			return nil, err
+		}
+		if len(storePaths) == 0 {
+			return nil, fmt.Errorf("no store paths found for package %s", pkg.Raw)
+		}
+		for _, storePath := range storePaths {
+			parts := nix.NewStorePathParts(storePath)
+			outputs = append(outputs, lock.Output{
+				Path: storePath,
+				Name: parts.Output,
+				// Ugh, not sure this is true, but it's more true than not.
+				Default: true,
+			})
+		}
+	}
+	return outputs, nil
 }

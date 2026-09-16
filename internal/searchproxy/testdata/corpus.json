@@ -1,0 +1,1170 @@
+[
+  {
+    "attr": "abseil-cpp",
+    "constraint": "20260107.1",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "abseil-cpp",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "20260107.1"
+  },
+  {
+    "attr": "android-studio-tools",
+    "constraint": "11076708",
+    "last_modified": "2025-03-23T05:31:05Z",
+    "name": "android-studio-tools",
+    "rev": "dd613136ee91f67e5dba3f3f41ac99ae89c5406b",
+    "version": "11076708"
+  },
+  {
+    "attr": "apple-sdk_14",
+    "constraint": "14.4",
+    "last_modified": "2025-10-22T20:59:19Z",
+    "name": "apple-sdk_14",
+    "rev": "01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09",
+    "version": "14.4"
+  },
+  {
+    "attr": "aws-sam-cli",
+    "constraint": "1.154.0",
+    "last_modified": "2026-05-20T06:38:13Z",
+    "name": "aws-sam-cli",
+    "rev": "d99b013d5d1931ad77fe3912ed218170dec5d9a4",
+    "version": "1.154.0"
+  },
+  {
+    "attr": "awscli2",
+    "constraint": "2.16.4",
+    "last_modified": "2024-06-17T06:49:48Z",
+    "name": "awscli2",
+    "rev": "38d3352a65ac9d621b0cd3074d3bef27199ff78f",
+    "version": "2.16.4"
+  },
+  {
+    "attr": "awscli2",
+    "constraint": "2.31.11",
+    "last_modified": "2025-10-22T20:59:19Z",
+    "name": "awscli2",
+    "rev": "01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09",
+    "version": "2.31.11"
+  },
+  {
+    "attr": "awscli2",
+    "constraint": "2.33.2",
+    "last_modified": "2026-03-27T11:17:38Z",
+    "name": "awscli2",
+    "rev": "832efc09b4caf6b4569fbf9dc01bec3082a00611",
+    "version": "2.33.2"
+  },
+  {
+    "attr": "awscli2",
+    "constraint": "latest",
+    "last_modified": "2026-08-27T07:16:00Z",
+    "name": "awscli2",
+    "rev": "c27cdad491a991b11ed731760aa2ef8db0cb0410",
+    "version": "2.35.11"
+  },
+  {
+    "attr": "awscli",
+    "constraint": "1.31.6",
+    "last_modified": "2024-02-10T18:15:24Z",
+    "name": "awscli",
+    "rev": "10b813040df67c4039086db0f6eaf65c536886c6",
+    "version": "1.31.6"
+  },
+  {
+    "attr": "awscli",
+    "constraint": "1.32.58",
+    "last_modified": "2024-03-22T11:26:23Z",
+    "name": "awscli",
+    "rev": "a3ed7406349a9335cb4c2a71369b697cecd9d351",
+    "version": "1.32.58"
+  },
+  {
+    "attr": "bats",
+    "constraint": "1.10.0",
+    "last_modified": "2024-04-02T11:59:43Z",
+    "name": "bats",
+    "rev": "4b455dc2048f73a79eb3713f342369ff58f93e0b",
+    "version": "1.10.0"
+  },
+  {
+    "attr": "bats",
+    "constraint": "1.12.0",
+    "last_modified": "2026-01-30T02:32:49Z",
+    "name": "bats",
+    "rev": "6308c3b21396534d8aaeac46179c14c439a89b8a",
+    "version": "1.12.0"
+  },
+  {
+    "attr": "betteralign",
+    "constraint": "0.9.1",
+    "last_modified": "2026-04-23T13:07:47Z",
+    "name": "betteralign",
+    "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
+    "version": "0.9.1"
+  },
+  {
+    "attr": "binutils",
+    "constraint": "2.40",
+    "last_modified": "2024-02-26T19:46:43Z",
+    "name": "binutils",
+    "rev": "548a86b335d7ecd8b57ec617781f5e652ab0c38e",
+    "version": "2.40"
+  },
+  {
+    "attr": "bun",
+    "constraint": "1.3.13",
+    "last_modified": "2026-05-31T16:57:23Z",
+    "name": "bun",
+    "rev": "3109eaae18e09d0b8aef23dc2579e7d94b8d4b4e",
+    "version": "1.3.13"
+  },
+  {
+    "attr": "clang-tools",
+    "constraint": "21.1.8",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "clang-tools",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "21.1.8"
+  },
+  {
+    "attr": "clang",
+    "constraint": "21.1.8",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "clang",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "21.1.8"
+  },
+  {
+    "attr": "consul",
+    "constraint": "1.20.5",
+    "last_modified": "2025-03-23T05:31:05Z",
+    "name": "consul",
+    "rev": "dd613136ee91f67e5dba3f3f41ac99ae89c5406b",
+    "version": "1.20.5"
+  },
+  {
+    "attr": "coreutils",
+    "constraint": "9.10",
+    "last_modified": "2026-04-23T13:07:47Z",
+    "name": "coreutils",
+    "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
+    "version": "9.10"
+  },
+  {
+    "attr": "coreutils",
+    "constraint": "9.11",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "coreutils",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "9.11"
+  },
+  {
+    "attr": "coreutils",
+    "constraint": "9.5",
+    "last_modified": "2024-12-23T21:10:33Z",
+    "name": "coreutils",
+    "rev": "de1864217bfa9b5845f465e771e0ecb48b30e02d",
+    "version": "9.5"
+  },
+  {
+    "attr": "delta",
+    "constraint": "0.18.2",
+    "last_modified": "2025-05-16T20:19:48Z",
+    "name": "delta",
+    "rev": "12a55407652e04dcf2309436eb06fef0d3713ef3",
+    "version": "0.18.2"
+  },
+  {
+    "attr": "deno",
+    "constraint": "2.1.5",
+    "last_modified": "2025-01-11T15:21:40Z",
+    "name": "deno",
+    "rev": "590cc22eefd616c8f90608870d28afe25d37e8b8",
+    "version": "2.1.5"
+  },
+  {
+    "attr": "docker-compose",
+    "constraint": "2.32.4",
+    "last_modified": "2025-01-22T06:06:04Z",
+    "name": "docker-compose",
+    "rev": "5757bbb8bd7c0630a0cc4bb19c47e588db30b97c",
+    "version": "2.32.4"
+  },
+  {
+    "attr": "dumb-init",
+    "constraint": "1.2.5",
+    "last_modified": "2024-05-22T06:18:38Z",
+    "name": "dumb-init",
+    "rev": "3f316d2a50699a78afe5e77ca486ad553169061e",
+    "version": "1.2.5"
+  },
+  {
+    "attr": "enumer",
+    "constraint": "1.6.3",
+    "last_modified": "2026-03-21T07:29:51Z",
+    "name": "enumer",
+    "rev": "09061f748ee21f68a089cd5d91ec1859cd93d0be",
+    "version": "1.6.3"
+  },
+  {
+    "attr": "envsubst",
+    "constraint": "1.2.0",
+    "last_modified": "2023-04-13T03:55:09Z",
+    "name": "envsubst",
+    "rev": "96ba1c52e54e74c3197f4d43026b3f3d92e83ff9",
+    "version": "1.2.0"
+  },
+  {
+    "attr": "gawk",
+    "constraint": "5.3.2",
+    "last_modified": "2025-07-28T17:09:23Z",
+    "name": "gawk",
+    "rev": "648f70160c03151bc2121d179291337ad6bc564b",
+    "version": "5.3.2"
+  },
+  {
+    "attr": "git",
+    "constraint": "2.43.1",
+    "last_modified": "2024-02-26T19:46:43Z",
+    "name": "git",
+    "rev": "548a86b335d7ecd8b57ec617781f5e652ab0c38e",
+    "version": "2.43.1"
+  },
+  {
+    "attr": "git",
+    "constraint": "2.49.0",
+    "last_modified": "2025-05-16T20:19:48Z",
+    "name": "git",
+    "rev": "12a55407652e04dcf2309436eb06fef0d3713ef3",
+    "version": "2.49.0"
+  },
+  {
+    "attr": "git",
+    "constraint": "2.53.0",
+    "last_modified": "2026-04-23T13:07:47Z",
+    "name": "git",
+    "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
+    "version": "2.53.0"
+  },
+  {
+    "attr": "gnumake",
+    "constraint": "4.4.1",
+    "last_modified": "2024-02-24T23:06:34Z",
+    "name": "gnumake",
+    "rev": "9a9dae8f6319600fa9aebde37f340975cab4b8c0",
+    "version": "4.4.1"
+  },
+  {
+    "attr": "gnuplot",
+    "constraint": "6.0.2",
+    "last_modified": "2025-02-07T11:26:36Z",
+    "name": "gnuplot",
+    "rev": "d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d",
+    "version": "6.0.2"
+  },
+  {
+    "attr": "gnused",
+    "constraint": "4.9",
+    "last_modified": "2024-08-31T10:12:23Z",
+    "name": "gnused",
+    "rev": "5629520edecb69630a3f4d17d3d33fc96c13f6fe",
+    "version": "4.9"
+  },
+  {
+    "attr": "gnutar",
+    "constraint": "1.35",
+    "last_modified": "2024-10-13T23:44:06Z",
+    "name": "gnutar",
+    "rev": "d4f247e89f6e10120f911e2e2d2254a050d0f732",
+    "version": "1.35"
+  },
+  {
+    "attr": "go-bindata",
+    "constraint": "4.0.2",
+    "last_modified": "2025-05-16T20:19:48Z",
+    "name": "go-bindata",
+    "rev": "12a55407652e04dcf2309436eb06fef0d3713ef3",
+    "version": "4.0.2"
+  },
+  {
+    "attr": "go-junit-report",
+    "constraint": "2.1.0",
+    "last_modified": "2025-03-11T17:52:14Z",
+    "name": "go-junit-report",
+    "rev": "0d534853a55b5d02a4ababa1d71921ce8f0aee4c",
+    "version": "2.1.0"
+  },
+  {
+    "attr": "go_1_22",
+    "constraint": "1.22.1",
+    "last_modified": "2024-03-06T17:57:40Z",
+    "name": "go",
+    "rev": "58ae79ea707579c40102ddf62d84b902a987c58b",
+    "version": "1.22.1"
+  },
+  {
+    "attr": "go_1_24",
+    "constraint": "1.24.0",
+    "last_modified": "2025-02-23T09:42:26Z",
+    "name": "go",
+    "rev": "2d068ae5c6516b2d04562de50a58c682540de9bf",
+    "version": "1.24.0"
+  },
+  {
+    "attr": "go",
+    "constraint": "1.24.3",
+    "last_modified": "2025-05-16T20:19:48Z",
+    "name": "go",
+    "rev": "12a55407652e04dcf2309436eb06fef0d3713ef3",
+    "version": "1.24.3"
+  },
+  {
+    "attr": "go_1_26",
+    "constraint": "1.26.0",
+    "last_modified": "2026-02-23T15:40:43Z",
+    "name": "go",
+    "rev": "80d901ec0377e19ac3f7bb8c035201e2e098cc97",
+    "version": "1.26.0"
+  },
+  {
+    "attr": "go",
+    "constraint": "1.26.2",
+    "last_modified": "2026-04-23T13:07:47Z",
+    "name": "go",
+    "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
+    "version": "1.26.2"
+  },
+  {
+    "attr": "gopls",
+    "constraint": "0.21.0",
+    "last_modified": "2026-01-23T17:20:52Z",
+    "name": "gopls",
+    "rev": "a1bab9e494f5f4939442a57a58d0449a109593fe",
+    "version": "0.21.0"
+  },
+  {
+    "attr": "gotestsum",
+    "constraint": "1.13.0",
+    "last_modified": "2026-04-16T08:46:55Z",
+    "name": "gotestsum",
+    "rev": "b86751bc4085f48661017fa226dee99fab6c651b",
+    "version": "1.13.0"
+  },
+  {
+    "attr": "graphviz",
+    "constraint": "12.2.1",
+    "last_modified": "2025-02-07T11:26:36Z",
+    "name": "graphviz",
+    "rev": "d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d",
+    "version": "12.2.1"
+  },
+  {
+    "attr": "groovy",
+    "constraint": "4.0.22",
+    "last_modified": "2024-10-13T23:44:06Z",
+    "name": "groovy",
+    "rev": "d4f247e89f6e10120f911e2e2d2254a050d0f732",
+    "version": "4.0.22"
+  },
+  {
+    "attr": "gum",
+    "constraint": "0.17.0",
+    "last_modified": "2026-01-23T17:20:52Z",
+    "name": "gum",
+    "rev": "a1bab9e494f5f4939442a57a58d0449a109593fe",
+    "version": "0.17.0"
+  },
+  {
+    "attr": "gzip",
+    "constraint": "1.13",
+    "last_modified": "2024-06-12T20:55:33Z",
+    "name": "gzip",
+    "rev": "a9858885e197f984d92d7fe64e9fff6b2e488d40",
+    "version": "1.13"
+  },
+  {
+    "attr": "gzip",
+    "constraint": "1.14",
+    "last_modified": "2025-11-23T21:50:36Z",
+    "name": "gzip",
+    "rev": "ee09932cedcef15aaf476f9343d1dea2cb77e261",
+    "version": "1.14"
+  },
+  {
+    "attr": "icu",
+    "constraint": "76.1",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "icu",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "76.1"
+  },
+  {
+    "attr": "jbang",
+    "constraint": "0.136.0",
+    "last_modified": "2026-08-01T16:34:20Z",
+    "name": "jbang",
+    "rev": "a5cbcfe954791221bfffe2307f7d1a1bf61a871e",
+    "version": "0.136.0"
+  },
+  {
+    "attr": "jdk17",
+    "constraint": "17.0.11+9",
+    "last_modified": "2024-06-12T20:55:33Z",
+    "name": "jdk",
+    "rev": "a9858885e197f984d92d7fe64e9fff6b2e488d40",
+    "version": "17.0.11+9"
+  },
+  {
+    "attr": "jdk17",
+    "constraint": "17.0.15+6",
+    "last_modified": "2025-06-20T02:24:11Z",
+    "name": "jdk",
+    "rev": "076e8c6678d8c54204abcb4b1b14c366835a58bb",
+    "version": "17.0.15+6"
+  },
+  {
+    "attr": "jdk",
+    "constraint": "21.0.5+11",
+    "last_modified": "2025-04-17T05:47:26Z",
+    "name": "jdk",
+    "rev": "ebe4301cbd8f81c4f8d3244b3632338bbeb6d49c",
+    "version": "21.0.5+11"
+  },
+  {
+    "attr": "jdk25",
+    "constraint": "25.0.0",
+    "last_modified": "2025-10-22T20:59:19Z",
+    "name": "jdk",
+    "rev": "01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09",
+    "version": "25.0.0"
+  },
+  {
+    "attr": "jdk8",
+    "constraint": "8u352-ga",
+    "last_modified": "2023-02-26T03:47:33Z",
+    "name": "jdk",
+    "rev": "9952d6bc395f5841262b006fbace8dd7e143b634",
+    "version": "8u352-ga"
+  },
+  {
+    "attr": "jdk8",
+    "constraint": "8u362-ga",
+    "last_modified": "2024-03-28T19:46:15Z",
+    "name": "jdk",
+    "rev": "64c81edb4b97a51c5bbc54c191763ac71a6517ee",
+    "version": "8u362-ga"
+  },
+  {
+    "attr": "jdk8",
+    "constraint": "8u462-b08",
+    "last_modified": "2025-10-22T20:59:19Z",
+    "name": "jdk",
+    "rev": "01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09",
+    "version": "8u462-b08"
+  },
+  {
+    "attr": "jdt-language-server",
+    "constraint": "1.55.0",
+    "last_modified": "2026-01-26T09:54:05Z",
+    "name": "jdt-language-server",
+    "rev": "5b265bda51b42a2a85af0a543c3e57b778b01b7d",
+    "version": "1.55.0"
+  },
+  {
+    "attr": "jq",
+    "constraint": "1.7.1",
+    "last_modified": "2024-10-17T04:50:07Z",
+    "name": "jq",
+    "rev": "1bde3e8e37a72989d4d455adde764d45f45dc11c",
+    "version": "1.7.1"
+  },
+  {
+    "attr": "jq",
+    "constraint": "1.8.1",
+    "last_modified": "2026-02-15T17:45:47Z",
+    "name": "jq",
+    "rev": "ac055f38c798b0d87695240c7b761b82fc7e5bc2",
+    "version": "1.8.1"
+  },
+  {
+    "attr": "jq",
+    "constraint": "latest",
+    "last_modified": "2026-08-27T07:16:00Z",
+    "name": "jq",
+    "rev": "c27cdad491a991b11ed731760aa2ef8db0cb0410",
+    "version": "1.8.2"
+  },
+  {
+    "attr": "just",
+    "constraint": "1.39.0",
+    "last_modified": "2025-03-11T17:52:14Z",
+    "name": "just",
+    "rev": "0d534853a55b5d02a4ababa1d71921ce8f0aee4c",
+    "version": "1.39.0"
+  },
+  {
+    "attr": "just",
+    "constraint": "1.43.0",
+    "last_modified": "2025-11-15T07:28:48Z",
+    "name": "just",
+    "rev": "1d4c88323ac36805d09657d13a5273aea1b34f0c",
+    "version": "1.43.0"
+  },
+  {
+    "attr": "lefthook",
+    "constraint": "1.13.6",
+    "last_modified": "2025-11-23T21:50:36Z",
+    "name": "lefthook",
+    "rev": "ee09932cedcef15aaf476f9343d1dea2cb77e261",
+    "version": "1.13.6"
+  },
+  {
+    "attr": "liblockfile",
+    "constraint": "1.17",
+    "last_modified": "2024-10-13T23:44:06Z",
+    "name": "liblockfile",
+    "rev": "d4f247e89f6e10120f911e2e2d2254a050d0f732",
+    "version": "1.17"
+  },
+  {
+    "attr": "lipo-go",
+    "constraint": "0.9.3",
+    "last_modified": "2025-03-31T17:23:37Z",
+    "name": "lipo-go",
+    "rev": "3eeaa42ef4c19447b48d1c676fe59077dfd0846e",
+    "version": "0.9.3"
+  },
+  {
+    "attr": "lipo-go",
+    "constraint": "0.9.4",
+    "last_modified": "2026-03-21T07:29:51Z",
+    "name": "lipo-go",
+    "rev": "09061f748ee21f68a089cd5d91ec1859cd93d0be",
+    "version": "0.9.4"
+  },
+  {
+    "attr": "llvm_21",
+    "constraint": "21.1.8",
+    "last_modified": "2026-06-22T09:00:13Z",
+    "name": "llvm_21",
+    "rev": "b3c092d3c36d91e2f61f3dfb39a159f180a56659",
+    "version": "21.1.8"
+  },
+  {
+    "attr": "maven",
+    "constraint": "3.8.4",
+    "last_modified": "2022-03-21T18:25:50Z",
+    "name": "maven",
+    "rev": "4c3c80df545ec5cb26b5480979c3e3f93518cbe5",
+    "version": "3.8.4"
+  },
+  {
+    "attr": "maven",
+    "constraint": "3.9.12",
+    "last_modified": "2026-05-21T08:15:18Z",
+    "name": "maven",
+    "rev": "4a29d733e8a7d5b824c3d8c958a946a9867b3eb2",
+    "version": "3.9.12"
+  },
+  {
+    "attr": "maven",
+    "constraint": "3.9.16",
+    "last_modified": "2026-08-01T16:34:20Z",
+    "name": "maven",
+    "rev": "a5cbcfe954791221bfffe2307f7d1a1bf61a871e",
+    "version": "3.9.16"
+  },
+  {
+    "attr": "maven",
+    "constraint": "3.9.6",
+    "last_modified": "2024-06-12T20:55:33Z",
+    "name": "maven",
+    "rev": "a9858885e197f984d92d7fe64e9fff6b2e488d40",
+    "version": "3.9.6"
+  },
+  {
+    "attr": "mvnd",
+    "constraint": "1.0.6",
+    "last_modified": "2026-08-01T16:34:20Z",
+    "name": "mvnd",
+    "rev": "a5cbcfe954791221bfffe2307f7d1a1bf61a871e",
+    "version": "1.0.6"
+  },
+  {
+    "attr": "mysql80",
+    "constraint": "8.0.36",
+    "last_modified": "2024-03-22T11:26:23Z",
+    "name": "mysql80",
+    "rev": "a3ed7406349a9335cb4c2a71369b697cecd9d351",
+    "version": "8.0.36"
+  },
+  {
+    "attr": "nodejs-12_x",
+    "constraint": "12.22.12",
+    "last_modified": "2022-05-03T02:40:48Z",
+    "name": "nodejs",
+    "rev": "24c33ab7952544ad355d0677c9eea931b23f371c",
+    "version": "12.22.12"
+  },
+  {
+    "attr": "nodejs",
+    "constraint": "14.18.0",
+    "last_modified": "2021-10-22T02:15:45Z",
+    "name": "nodejs",
+    "rev": "718895c14907b60069520b6394b4dbb6e3aa9c33",
+    "version": "14.18.0"
+  },
+  {
+    "attr": "nodejs",
+    "constraint": "16.14.2",
+    "last_modified": "2022-04-25T00:37:51Z",
+    "name": "nodejs",
+    "rev": "b43d3db76831cb80db01dd2ed50d66175fa2a325",
+    "version": "16.14.2"
+  },
+  {
+    "attr": "nodejs_16",
+    "constraint": "16.20.2",
+    "last_modified": "2023-11-17T14:14:56Z",
+    "name": "nodejs",
+    "rev": "a71323f68d4377d12c04a5410e214495ec598d4c",
+    "version": "16.20.2"
+  },
+  {
+    "attr": "nodejs",
+    "constraint": "18.12.1",
+    "last_modified": "2022-12-17T09:19:40Z",
+    "name": "nodejs",
+    "rev": "80c24eeb9ff46aa99617844d0c4168659e35175f",
+    "version": "18.12.1"
+  },
+  {
+    "attr": "nodejs_18",
+    "constraint": "18.19.1",
+    "last_modified": "2024-03-08T13:51:52Z",
+    "name": "nodejs",
+    "rev": "a343533bccc62400e8a9560423486a3b6c11a23b",
+    "version": "18.19.1"
+  },
+  {
+    "attr": "nodejs-18_x",
+    "constraint": "18.2.0",
+    "last_modified": "2022-05-28T02:13:38Z",
+    "name": "nodejs",
+    "rev": "cce0667703fce3a1162dd252cf0864fdf83466ab",
+    "version": "18.2.0"
+  },
+  {
+    "attr": "nodejs-19_x",
+    "constraint": "19.4.0",
+    "last_modified": "2023-01-17T09:21:52Z",
+    "name": "nodejs",
+    "rev": "2d38b664b4400335086a713a0036aafaa002c003",
+    "version": "19.4.0"
+  },
+  {
+    "attr": "nodejs_22",
+    "constraint": "22.10.0",
+    "last_modified": "2024-11-16T04:25:12Z",
+    "name": "nodejs",
+    "rev": "34a626458d686f1b58139620a8b2793e9e123bba",
+    "version": "22.10.0"
+  },
+  {
+    "attr": "nodejs_22",
+    "constraint": "22.12.0",
+    "last_modified": "2025-01-25T23:17:58Z",
+    "name": "nodejs",
+    "rev": "b582bb5b0d7af253b05d58314b85ab8ec46b8d19",
+    "version": "22.12.0"
+  },
+  {
+    "attr": "nodejs_22",
+    "constraint": "22.14.0",
+    "last_modified": "2025-03-23T14:04:58Z",
+    "name": "nodejs",
+    "rev": "f3a2a0601e9669a6e38af25b46ce6c4563bcb6da",
+    "version": "22.14.0"
+  },
+  {
+    "attr": "nodejs_23",
+    "constraint": "23.7.0",
+    "last_modified": "2025-02-07T11:26:36Z",
+    "name": "nodejs",
+    "rev": "d98abf5cf5914e5e4e9d57205e3af55ca90ffc1d",
+    "version": "23.7.0"
+  },
+  {
+    "attr": "nodejs_24",
+    "constraint": "24",
+    "last_modified": "2025-12-27T12:56:01Z",
+    "name": "nodejs",
+    "rev": "3edc4a30ed3903fdf6f90c837f961fa6b49582d1",
+    "version": "24.12.0"
+  },
+  {
+    "attr": "nodejs_24",
+    "constraint": "24.12.0",
+    "last_modified": "2025-12-27T12:56:01Z",
+    "name": "nodejs",
+    "rev": "3edc4a30ed3903fdf6f90c837f961fa6b49582d1",
+    "version": "24.12.0"
+  },
+  {
+    "attr": "nodejs_24",
+    "constraint": "24.5.0",
+    "last_modified": "2025-08-11T07:05:29Z",
+    "name": "nodejs",
+    "rev": "9585e9192aadc13ec3e49f33f8333bd3cda524df",
+    "version": "24.5.0"
+  },
+  {
+    "attr": "nodejs_25",
+    "constraint": "25.8.1",
+    "last_modified": "2026-03-21T07:29:51Z",
+    "name": "nodejs",
+    "rev": "09061f748ee21f68a089cd5d91ec1859cd93d0be",
+    "version": "25.8.1"
+  },
+  {
+    "attr": "pandoc",
+    "constraint": "3.7.0.2",
+    "last_modified": "2025-11-15T07:28:48Z",
+    "name": "pandoc",
+    "rev": "1d4c88323ac36805d09657d13a5273aea1b34f0c",
+    "version": "3.7.0.2"
+  },
+  {
+    "attr": "parallel",
+    "constraint": "20240122",
+    "last_modified": "2024-02-24T23:06:34Z",
+    "name": "parallel",
+    "rev": "9a9dae8f6319600fa9aebde37f340975cab4b8c0",
+    "version": "20240122"
+  },
+  {
+    "attr": "parallel",
+    "constraint": "20251022",
+    "last_modified": "2025-11-15T07:28:48Z",
+    "name": "parallel",
+    "rev": "1d4c88323ac36805d09657d13a5273aea1b34f0c",
+    "version": "20251022"
+  },
+  {
+    "attr": "perl540Packages.libxml_perl",
+    "constraint": "0.08",
+    "last_modified": "2025-07-28T17:09:23Z",
+    "name": "perl540Packages.libxml_perl",
+    "rev": "648f70160c03151bc2121d179291337ad6bc564b",
+    "version": "0.08"
+  },
+  {
+    "attr": "perl",
+    "constraint": "5.40.0",
+    "last_modified": "2025-07-28T17:09:23Z",
+    "name": "perl",
+    "rev": "648f70160c03151bc2121d179291337ad6bc564b",
+    "version": "5.40.0"
+  },
+  {
+    "attr": "pkg-config",
+    "constraint": "0.29.2",
+    "last_modified": "2025-11-23T21:50:36Z",
+    "name": "pkg-config",
+    "rev": "ee09932cedcef15aaf476f9343d1dea2cb77e261",
+    "version": "0.29.2"
+  },
+  {
+    "attr": "playwright-test",
+    "constraint": "1.48.1",
+    "last_modified": "2025-01-25T23:17:58Z",
+    "name": "playwright-test",
+    "rev": "b582bb5b0d7af253b05d58314b85ab8ec46b8d19",
+    "version": "1.48.1"
+  },
+  {
+    "attr": "playwright-test",
+    "constraint": "1.50.1",
+    "last_modified": "2025-04-17T05:47:26Z",
+    "name": "playwright-test",
+    "rev": "ebe4301cbd8f81c4f8d3244b3632338bbeb6d49c",
+    "version": "1.50.1"
+  },
+  {
+    "attr": "playwright-test",
+    "constraint": "1.57.0",
+    "last_modified": "2026-02-23T15:40:43Z",
+    "name": "playwright-test",
+    "rev": "80d901ec0377e19ac3f7bb8c035201e2e098cc97",
+    "version": "1.57.0"
+  },
+  {
+    "attr": "playwright-test",
+    "constraint": "1.59.1",
+    "last_modified": "2026-05-21T08:15:18Z",
+    "name": "playwright-test",
+    "rev": "4a29d733e8a7d5b824c3d8c958a946a9867b3eb2",
+    "version": "1.59.1"
+  },
+  {
+    "attr": "pnpm",
+    "constraint": "10.13.1",
+    "last_modified": "2025-07-18T03:30:42Z",
+    "name": "pnpm",
+    "rev": "e821e03193486359aa942372be2d9c1f377b7a18",
+    "version": "10.13.1"
+  },
+  {
+    "attr": "pnpm",
+    "constraint": "10.26.1",
+    "last_modified": "2025-12-31T03:27:36Z",
+    "name": "pnpm",
+    "rev": "f665af0cdb70ed27e1bd8f9fdfecaf451260fc55",
+    "version": "10.26.1"
+  },
+  {
+    "attr": "pyright",
+    "constraint": "1.1.402",
+    "last_modified": "2025-07-13T22:45:35Z",
+    "name": "pyright",
+    "rev": "a421ac6595024edcfbb1ef950a3712b89161c359",
+    "version": "1.1.402"
+  },
+  {
+    "attr": "pyright",
+    "constraint": "1.1.407",
+    "last_modified": "2026-01-23T17:20:52Z",
+    "name": "pyright",
+    "rev": "a1bab9e494f5f4939442a57a58d0449a109593fe",
+    "version": "1.1.407"
+  },
+  {
+    "attr": "python314Packages.bashlex",
+    "constraint": "0.18",
+    "last_modified": "2026-03-21T07:29:51Z",
+    "name": "python314Packages.bashlex",
+    "rev": "09061f748ee21f68a089cd5d91ec1859cd93d0be",
+    "version": "0.18"
+  },
+  {
+    "attr": "python314Packages.pytest",
+    "constraint": "9.0.2",
+    "last_modified": "2026-04-10T12:25:30Z",
+    "name": "python314Packages.pytest",
+    "rev": "8c11f88bb9573a10a7d6bf87161ef08455ac70b9",
+    "version": "9.0.2"
+  },
+  {
+    "attr": "python310",
+    "constraint": "3.10.19",
+    "last_modified": "2025-12-31T03:27:36Z",
+    "name": "python",
+    "rev": "f665af0cdb70ed27e1bd8f9fdfecaf451260fc55",
+    "version": "3.10.19"
+  },
+  {
+    "attr": "python312",
+    "constraint": "3.12",
+    "last_modified": "2024-05-12T16:19:40Z",
+    "name": "python",
+    "rev": "3281bec7174f679eabf584591e75979a258d8c40",
+    "version": "3.12.3"
+  },
+  {
+    "attr": "python312",
+    "constraint": "3.12.0",
+    "last_modified": "2023-11-17T14:14:56Z",
+    "name": "python",
+    "rev": "a71323f68d4377d12c04a5410e214495ec598d4c",
+    "version": "3.12.0"
+  },
+  {
+    "attr": "python312",
+    "constraint": "3.12.11",
+    "last_modified": "2025-07-13T22:45:35Z",
+    "name": "python",
+    "rev": "a421ac6595024edcfbb1ef950a3712b89161c359",
+    "version": "3.12.11"
+  },
+  {
+    "attr": "python313",
+    "constraint": "3.13",
+    "last_modified": "2025-05-16T20:19:48Z",
+    "name": "python",
+    "rev": "12a55407652e04dcf2309436eb06fef0d3713ef3",
+    "version": "3.13.3"
+  },
+  {
+    "attr": "python313",
+    "constraint": "3.13.1",
+    "last_modified": "2025-01-19T08:16:51Z",
+    "name": "python",
+    "rev": "50165c4f7eb48ce82bd063e1fb8047a0f515f8ce",
+    "version": "3.13.1"
+  },
+  {
+    "attr": "python314",
+    "constraint": "3.14",
+    "last_modified": "2026-01-23T17:20:52Z",
+    "name": "python",
+    "rev": "a1bab9e494f5f4939442a57a58d0449a109593fe",
+    "version": "3.14.2"
+  },
+  {
+    "attr": "python314",
+    "constraint": "3.14.0",
+    "last_modified": "2025-11-15T07:28:48Z",
+    "name": "python",
+    "rev": "1d4c88323ac36805d09657d13a5273aea1b34f0c",
+    "version": "3.14.0"
+  },
+  {
+    "attr": "python314",
+    "constraint": "3.14.3",
+    "last_modified": "2026-02-23T15:40:43Z",
+    "name": "python",
+    "rev": "80d901ec0377e19ac3f7bb8c035201e2e098cc97",
+    "version": "3.14.3"
+  },
+  {
+    "attr": "python3",
+    "constraint": "3.9.9",
+    "last_modified": "2022-01-26T13:01:16Z",
+    "name": "python",
+    "rev": "e722007bf05802573b41701c49da6c8814878171",
+    "version": "3.9.9"
+  },
+  {
+    "attr": "rcodesign",
+    "constraint": "0.29.0",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "rcodesign",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "0.29.0"
+  },
+  {
+    "attr": "re2",
+    "constraint": "2025-11-05",
+    "last_modified": "2026-06-27T07:37:20Z",
+    "name": "re2",
+    "rev": "3d46470bb3030020f7e1361f33514854f5bfa86d",
+    "version": "2025-11-05"
+  },
+  {
+    "attr": "redis",
+    "constraint": "7.2.4",
+    "last_modified": "2024-01-27T14:55:31Z",
+    "name": "redis",
+    "rev": "160b762eda6d139ac10ae081f8f78d640dd523eb",
+    "version": "7.2.4"
+  },
+  {
+    "attr": "rsync",
+    "constraint": "3.4.1",
+    "last_modified": "2025-01-19T08:16:51Z",
+    "name": "rsync",
+    "rev": "50165c4f7eb48ce82bd063e1fb8047a0f515f8ce",
+    "version": "3.4.1"
+  },
+  {
+    "attr": "ruby",
+    "constraint": "2.7.6",
+    "last_modified": "2023-01-31T09:49:33Z",
+    "name": "ruby",
+    "rev": "e3945057be467f32028ff6b67403be08285ad8c8",
+    "version": "2.7.6"
+  },
+  {
+    "attr": "ruby_3_2",
+    "constraint": "3.2.2",
+    "last_modified": "2024-01-14T03:55:27Z",
+    "name": "ruby",
+    "rev": "dd5621df6dcb90122b50da5ec31c411a0de3e538",
+    "version": "3.2.2"
+  },
+  {
+    "attr": "ruff",
+    "constraint": "0.12.3",
+    "last_modified": "2025-07-13T22:45:35Z",
+    "name": "ruff",
+    "rev": "a421ac6595024edcfbb1ef950a3712b89161c359",
+    "version": "0.12.3"
+  },
+  {
+    "attr": "terraform_0_12",
+    "constraint": "0.12.31",
+    "last_modified": "2022-01-10T21:34:55Z",
+    "name": "terraform_0_12",
+    "rev": "81f05d871faf75d1456df6adec1d2118d787f65c",
+    "version": "0.12.31"
+  },
+  {
+    "attr": "tree",
+    "constraint": "2.2.1",
+    "last_modified": "2026-01-23T17:20:52Z",
+    "name": "tree",
+    "rev": "a1bab9e494f5f4939442a57a58d0449a109593fe",
+    "version": "2.2.1"
+  },
+  {
+    "attr": "unzip",
+    "constraint": "6.0",
+    "last_modified": "2025-03-11T17:52:14Z",
+    "name": "unzip",
+    "rev": "0d534853a55b5d02a4ababa1d71921ce8f0aee4c",
+    "version": "6.0"
+  },
+  {
+    "attr": "urlencode",
+    "constraint": "1.0.1",
+    "last_modified": "2024-12-23T21:10:33Z",
+    "name": "urlencode",
+    "rev": "de1864217bfa9b5845f465e771e0ecb48b30e02d",
+    "version": "1.0.1"
+  },
+  {
+    "attr": "uv",
+    "constraint": "0.5.14",
+    "last_modified": "2025-01-03T14:51:55Z",
+    "name": "uv",
+    "rev": "a27871180d30ebee8aa6b11bf7fef8a52f024733",
+    "version": "0.5.14"
+  },
+  {
+    "attr": "uv",
+    "constraint": "0.8.2",
+    "last_modified": "2025-07-28T17:09:23Z",
+    "name": "uv",
+    "rev": "648f70160c03151bc2121d179291337ad6bc564b",
+    "version": "0.8.2"
+  },
+  {
+    "attr": "uv",
+    "constraint": "0.9.24",
+    "last_modified": "2026-01-11T16:44:50Z",
+    "name": "uv",
+    "rev": "4d113fe1f7bb454435a5cabae6cd283e64191bb7",
+    "version": "0.9.24"
+  },
+  {
+    "attr": "uv",
+    "constraint": "0.9.7",
+    "last_modified": "2025-11-15T07:28:48Z",
+    "name": "uv",
+    "rev": "1d4c88323ac36805d09657d13a5273aea1b34f0c",
+    "version": "0.9.7"
+  },
+  {
+    "attr": "vault",
+    "constraint": "1.20.4",
+    "last_modified": "2025-11-23T21:50:36Z",
+    "name": "vault",
+    "rev": "ee09932cedcef15aaf476f9343d1dea2cb77e261",
+    "version": "1.20.4"
+  },
+  {
+    "attr": "vault",
+    "constraint": "1.8.1",
+    "last_modified": "2021-08-19T13:27:31Z",
+    "name": "vault",
+    "rev": "14b0f20fa1f56438b74100513c9b1f7c072cf789",
+    "version": "1.8.1"
+  },
+  {
+    "attr": "vegeta",
+    "constraint": "12.12.0",
+    "last_modified": "2025-01-19T08:16:51Z",
+    "name": "vegeta",
+    "rev": "50165c4f7eb48ce82bd063e1fb8047a0f515f8ce",
+    "version": "12.12.0"
+  },
+  {
+    "attr": "wget",
+    "constraint": "1.21.4",
+    "last_modified": "2024-03-22T11:26:23Z",
+    "name": "wget",
+    "rev": "a3ed7406349a9335cb4c2a71369b697cecd9d351",
+    "version": "1.21.4"
+  },
+  {
+    "attr": "yq-go",
+    "constraint": "4.45.1",
+    "last_modified": "2025-03-11T17:52:14Z",
+    "name": "yq-go",
+    "rev": "0d534853a55b5d02a4ababa1d71921ce8f0aee4c",
+    "version": "4.45.1"
+  },
+  {
+    "attr": "yq",
+    "constraint": "3.4.3",
+    "last_modified": "2026-05-21T08:15:18Z",
+    "name": "yq",
+    "rev": "4a29d733e8a7d5b824c3d8c958a946a9867b3eb2",
+    "version": "3.4.3"
+  },
+  {
+    "attr": "zig",
+    "constraint": "0.13.0",
+    "last_modified": "2025-02-23T09:42:26Z",
+    "name": "zig",
+    "rev": "2d068ae5c6516b2d04562de50a58c682540de9bf",
+    "version": "0.13.0"
+  },
+  {
+    "attr": "zig",
+    "constraint": "0.14.0",
+    "last_modified": "2025-04-09T17:27:46Z",
+    "name": "zig",
+    "rev": "67d2b8200c828903b36a6dd0fb952fe424aa0606",
+    "version": "0.14.0"
+  },
+  {
+    "attr": "zip",
+    "constraint": "3.0",
+    "last_modified": "2024-10-13T23:44:06Z",
+    "name": "zip",
+    "rev": "d4f247e89f6e10120f911e2e2d2254a050d0f732",
+    "version": "3.0"
+  },
+  {
+    "attr": "zip",
+    "constraint": "latest",
+    "last_modified": "2026-08-27T07:16:00Z",
+    "name": "zip",
+    "rev": "c27cdad491a991b11ed731760aa2ef8db0cb0410",
+    "version": "3.0"
+  },
+  {
+    "attr": "zstd",
+    "constraint": "1.5.5",
+    "last_modified": "2024-04-18T12:17:44Z",
+    "name": "zstd",
+    "rev": "d764f230634fa4f86dc8d01c6af9619c7cc5d225",
+    "version": "1.5.5"
+  },
+  {
+    "attr": "zulu17",
+    "constraint": "17.0.10",
+    "last_modified": "2024-10-13T23:44:06Z",
+    "name": "zulu",
+    "rev": "d4f247e89f6e10120f911e2e2d2254a050d0f732",
+    "version": "17.0.10"
+  },
+  {
+    "attr": "zulu8",
+    "constraint": "8.0.382",
+    "last_modified": "2024-01-27T14:55:31Z",
+    "name": "zulu",
+    "rev": "160b762eda6d139ac10ae081f8f78d640dd523eb",
+    "version": "8.0.382"
+  },
+  {
+    "attr": "zulu8",
+    "constraint": "8.0.422",
+    "last_modified": "2026-04-23T13:07:47Z",
+    "name": "zulu",
+    "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
+    "version": "8.0.422"
+  }
+]

@@ -27,6 +27,8 @@ const xdgStateHomeDir = "/tmp/devbox-testscripts"
 // RunDevboxTestscripts generates and runs a testscript test for each Devbox project in dir.
 // For each project, runs `devbox run run_test` (if script exists) and asserts it succeeds.
 func RunDevboxTestscripts(t *testing.T, dir string) {
+	startSearchStub(t)
+
 	// ensure the state home dir for devbox exists
 	err := os.MkdirAll(xdgStateHomeDir, 0o700)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {

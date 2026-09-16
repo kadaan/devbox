@@ -7,8 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,9 +17,9 @@ import (
 	"go.jetify.com/devbox/internal/build"
 	"go.jetify.com/devbox/internal/envir"
 	"go.jetify.com/devbox/internal/redact"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
-
-const searchAPIEndpoint = "https://search.devbox.sh"
 
 var ErrNotFound = errors.New("Not found")
 
@@ -31,10 +29,30 @@ type client struct {
 
 func Client() *client {
 	return &client{
-		host: envir.GetValueOrDefault(envir.DevboxSearchHost, searchAPIEndpoint),
+		host: host(),
 	}
 }
 
+// nixhubHost is the search service whose index nixhub.io renders.
+const nixhubHost = "https://search.devbox.sh"
+
+func host() string {
+	return envir.GetValueOrDefault(envir.DevboxSearchHost, build.SearchHost)
+}
+
+// ServesNixhub reports whether the configured search host is the one nixhub.io
+// renders.
+//
+// nixhub.io's pages describe that index and no other, so a self-hosted search
+// host has no pages there: a package it resolved may be absent from nixhub, or
+// carry a different version. Callers use this to decide whether a
+// "more information" link would point at an answer or at a contradiction.
+func ServesNixhub() bool {
+	return strings.TrimSuffix(host(), "/") == nixhubHost
+}
+
+// Search returns the packages matching query, and an empty result set rather
+// than an error when the search service holds no match.
 func (c *client) Search(ctx context.Context, query string) (*SearchResults, error) {
 	if query == "" {
 		return nil, fmt.Errorf("query should not be empty")
@@ -51,7 +69,7 @@ func (c *client) Search(ctx context.Context, query string) (*SearchResults, erro
 		return nil, err
 	}
 
-	if searchResults == nil || searchResults.TotalResults == 0 {
+	if searchResults == nil {
 		return nil, ErrNotFound
 	}
 

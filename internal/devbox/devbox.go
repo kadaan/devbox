@@ -632,6 +632,7 @@ func (d *Devbox) execPrintDevEnv(ctx context.Context, usePrintDevEnvCache bool) 
 		FlakeDir:             d.flakeDir(),
 		PrintDevEnvCachePath: d.nixPrintDevEnvCachePath(),
 		UsePrintDevEnvCache:  usePrintDevEnvCache,
+		ProfilePath:          d.nixDevEnvProfilePath(),
 	})
 	if spinny != nil {
 		spinny.Stop()
@@ -839,7 +840,7 @@ func (d *Devbox) ensureStateIsUpToDateAndComputeEnv(
 ) (map[string]string, error) {
 	defer debug.FunctionTimer().End()
 
-	upToDate, err := d.lockfile.IsUpToDateAndInstalled(isFishShell())
+	upToDate, err := d.lockfile.IsUpToDateAndInstalled(ctx, isFishShell())
 	if err != nil {
 		return nil, err
 	}
@@ -879,6 +880,14 @@ func (d *Devbox) ensureStateIsUpToDateAndComputeEnv(
 
 func (d *Devbox) nixPrintDevEnvCachePath() string {
 	return filepath.Join(d.projectDir, ".devbox/.nix-print-dev-env-cache")
+}
+
+// nixDevEnvProfilePath is the GC root for the dev environment. It is kept
+// separate from the package profile because the two have different contents:
+// this one holds the whole environment Nix computed, including the stdenv
+// tooling that the package profile does not carry.
+func (d *Devbox) nixDevEnvProfilePath() string {
+	return filepath.Join(d.projectDir, ".devbox/nix/devenv-profile/default")
 }
 
 func (d *Devbox) flakeDir() string {

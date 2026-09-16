@@ -25,6 +25,7 @@ import (
 	"go.jetify.com/devbox/internal/devpkg/pkgtype"
 	"go.jetify.com/devbox/internal/lock"
 	"go.jetify.com/devbox/internal/nix"
+	"go.jetify.com/devbox/internal/searcher"
 	"go.jetify.com/devbox/internal/ux"
 	"go.jetify.com/devbox/nix/flake"
 	"go.jetify.com/devbox/plugins"
@@ -334,7 +335,7 @@ func (p *Package) NormalizedDevboxPackageReference() (string, error) {
 	if installable.AttrPath == "" {
 		return "", nil
 	}
-	installable.AttrPath = fmt.Sprintf("legacyPackages.%s.%s", nix.System(), installable.AttrPath)
+	installable.AttrPath = qualifyAttrPath(nix.System(), installable.AttrPath)
 	installable.Outputs = ""
 	return installable.String(), nil
 }
@@ -692,7 +693,7 @@ func (p *Package) DocsURL() string {
 		path, _, _ := strings.Cut(p.RunXPath(), "@")
 		return fmt.Sprintf("https://www.github.com/%s", path)
 	}
-	if p.IsDevboxPackage {
+	if p.IsDevboxPackage && searcher.ServesNixhub() {
 		return fmt.Sprintf("https://www.nixhub.io/packages/%s", p.CanonicalName())
 	}
 	return ""

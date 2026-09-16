@@ -43,6 +43,12 @@ type PrintDevEnvArgs struct {
 	FlakeDir             string
 	PrintDevEnvCachePath string
 	UsePrintDevEnvCache  bool
+	// ProfilePath, when set, is a Nix profile that Nix updates to point at the
+	// dev environment it just built. The profile is a GC root, which is the
+	// only thing that keeps the environment's closure alive: the package
+	// profile roots the packages themselves, but not the stdenv setup hooks
+	// and build tools that the environment also puts on PATH.
+	ProfilePath string
 }
 
 // PrintDevEnv calls `nix print-dev-env -f <path>` and returns its output. The output contains
@@ -61,6 +67,19 @@ func (*NixInstance) PrintDevEnv(ctx context.Context, args *PrintDevEnvArgs) (*Pr
 			if err := json.Unmarshal(data, &out); err != nil {
 				return nil, errors.WithStack(err)
 			}
+			// The cache names store paths but does not keep them alive, so a
+			// garbage collection can leave it describing an environment that no
+			// longer exists -- typically as a PATH entry that has silently
+			// stopped resolving. Discarding the cache here sends us down the
+			// same path as a cache miss, which rebuilds what was collected.
+			if missing, mErr := MissingStorePaths(ctx, StorePaths(data)); mErr != nil {
+				slog.Debug("could not check dev env store paths, using cache as-is", "err", mErr)
+			} else if len(missing) > 0 {
+				slog.Debug("dev env cache references collected store paths, recomputing",
+					"missing", len(missing), "first", missing[0])
+				data = nil
+				out = PrintDevEnvOut{}
+			}
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return nil, errors.WithStack(err)
 		}
@@ -76,6 +95,12 @@ func (*NixInstance) PrintDevEnv(ctx context.Context, args *PrintDevEnvArgs) (*Pr
 		cmd := Command("print-dev-env", "--json")
 		if featureflag.ImpurePrintDevEnv.Enabled() {
 			cmd.Args = append(cmd.Args, "--impure")
+		}
+		if args.ProfilePath != "" {
+			if err := os.MkdirAll(filepath.Dir(args.ProfilePath), 0o755); err != nil {
+				return nil, errors.WithStack(err)
+			}
+			cmd.Args = append(cmd.Args, "--profile", args.ProfilePath)
 		}
 		cmd.Args = append(cmd.Args, ref)
 		slog.Debug("running print-dev-env cmd", "cmd", cmd)

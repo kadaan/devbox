@@ -63,9 +63,9 @@ func (f *flakePlan) needsGlibcPatch() bool {
 
 type glibcPatchFlake struct {
 	// DevboxFlake provides the devbox binary that will act as the patch
-	// flake's builder. By default it's set to "github:jetify-com/devbox/" +
-	// [build.Version]. For dev builds, it's set to the local path to the
-	// Devbox source code (this Go module) if it's available.
+	// flake's builder: the local Devbox source when this machine built the
+	// binary, otherwise "github:kadaan/devbox/" + [build.Commit]. See
+	// [devboxPatchFlakeRef].
 	DevboxFlake flake.Ref
 
 	// NixpkgsGlibcFlakeRef is a flake reference to the nixpkgs flake
@@ -90,32 +90,61 @@ type glibcPatchFlake struct {
 	Dependencies []string
 }
 
-func newGlibcPatchFlake(nixpkgs flake.Ref, packages []*devpkg.Package) (glibcPatchFlake, error) {
-	patchFlake := glibcPatchFlake{
-		DevboxFlake: flake.Ref{
-			Type:  flake.TypeGitHub,
-			Owner: "kadaan",
-			Repo:  "devbox",
-			Ref:   build.Version,
-		},
-		NixpkgsGlibcFlakeRef: nixpkgs.String(),
+// devboxPatchFlakeRef returns the flake providing the devbox binary that acts
+// as the patch flake's builder.
+//
+// Never [build.Version]: that is `git describe` output, and
+// "0.18.0-ens001-1-g597c2f6f" or anything "-dirty" is not a git ref. GitHub
+// falls back to reading it as a SHA and answers 422, so the whole shell fails
+// for any project holding a package that needs patching. A released tag is the
+// one Version that happens to resolve, which is why this only breaks builds
+// made outside a release.
+//
+// The local source tree wins whenever it resolves, so a build made on this
+// machine patches with the code it was built from and needs neither a push nor
+// the network. runtime.Caller records the compiling machine's path, so a binary
+// built elsewhere finds nothing there and falls through to the commit it was
+// built at — which, unlike the version, is always a valid ref.
+func devboxPatchFlakeRef(commit string, sourceDir func() (string, error)) flake.Ref {
+	src, err := sourceDir()
+	if err == nil {
+		return flake.Ref{Type: flake.TypePath, Path: src}
+	}
+	slog.Debug("no local devbox source to patch with; using the commit this binary was built at",
+		"commit", commit, "err", err)
+
+	ref := flake.Ref{Type: flake.TypeGitHub, Owner: "kadaan", Repo: "devbox"}
+	if isCommitHash(commit) {
+		ref.Ref = commit
+		return ref
 	}
 
-	// In dev builds, use the local Devbox flake for patching packages
-	// instead of the one on GitHub. Using build.IsDev doesn't work because
-	// DEVBOX_PROD=1 will attempt to download 0.0.0-dev from GitHub.
-	if strings.HasPrefix(build.Version, "0.0.0") {
-		src, err := build.SourceDir()
-		if err != nil {
-			slog.Error("can't find the local devbox flake for patching, falling back to the latest github release", "err", err)
-			patchFlake.DevboxFlake = flake.Ref{
-				Type:  flake.TypeGitHub,
-				Owner: "kadaan",
-				Repo:  "devbox",
-			}
-		} else {
-			patchFlake.DevboxFlake = flake.Ref{Type: flake.TypePath, Path: src}
+	// An unstamped build (build.Commit is "none") has nothing to pin to. The
+	// default branch is a guess, but it is a resolvable one, where a made-up
+	// ref is a guaranteed failure.
+	slog.Warn("this build records no commit to patch with; using the default branch",
+		"commit", commit)
+	return ref
+}
+
+// isCommitHash reports whether s is a full git object name, which is the only
+// form of [build.Commit] that GitHub can resolve.
+func isCommitHash(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
 		}
+	}
+	return true
+}
+
+func newGlibcPatchFlake(nixpkgs flake.Ref, packages []*devpkg.Package) (glibcPatchFlake, error) {
+	patchFlake := glibcPatchFlake{
+		DevboxFlake:          devboxPatchFlakeRef(build.Commit, build.SourceDir),
+		NixpkgsGlibcFlakeRef: nixpkgs.String(),
 	}
 
 	for _, pkg := range packages {

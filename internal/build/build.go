@@ -32,6 +32,12 @@ var (
 	// https://segment.com/docs/connections/sources/catalog/libraries/server/go/quickstart/
 	// It is disabled by default.
 	TelemetryKey = ""
+
+	// SearchHost is the package search service this binary resolves against.
+	// Build with -X go.jetify.com/devbox/internal/build.SearchHost=<url> to ship
+	// a binary that defaults to a self-hosted devbox search proxy; the
+	// DEVBOX_SEARCH_HOST environment variable still overrides it at runtime.
+	SearchHost = "https://search.devbox.sh"
 )
 
 // User-presentable names of operating systems supported by Devbox.

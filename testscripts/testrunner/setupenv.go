@@ -18,11 +18,20 @@ func setupTestEnv(env *testscript.Env) error {
 	setupPATH(env)
 	setupHome(env)
 	setupCacheHome(env)
+	setupSearchHost(env)
 	propagateEnvVars(env,
 		debug.DevboxDebug, // to enable extra logging
 		"SSL_CERT_FILE",   // so HTTPS works with Nix-installed certs
 	)
 	return nil
+}
+
+// setupSearchHost points the test at recorded search responses instead of
+// search.devbox.sh, so a run does not depend on that service being reachable.
+func setupSearchHost(env *testscript.Env) {
+	if searchStubURL != "" {
+		env.Setenv(envir.DevboxSearchHost, searchStubURL)
+	}
 }
 
 // setupHome sets the test's HOME to a unique temp directory. The testscript

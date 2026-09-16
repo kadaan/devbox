@@ -214,10 +214,17 @@ func (f *File) Tidy() {
 // IsUpToDateAndInstalled returns true if the lockfile is up to date and the
 // local hashes match, which generally indicates all packages are correctly
 // installed and print-dev-env has been computed and cached.
-func (f *File) IsUpToDateAndInstalled(isFish bool) (bool, error) {
+func (f *File) IsUpToDateAndInstalled(ctx context.Context, isFish bool) (bool, error) {
 	if dirty, err := f.isDirty(); err != nil {
 		return false, err
 	} else if dirty {
+		return false, nil
+	}
+	collected, err := devEnvHasCollectedStorePaths(ctx, f.devboxProject.ProjectDir())
+	if err != nil {
+		return false, err
+	}
+	if collected {
 		return false, nil
 	}
 	configHash, err := f.devboxProject.ConfigHash()
@@ -231,7 +238,9 @@ func (f *File) IsUpToDateAndInstalled(isFish bool) (bool, error) {
 	})
 }
 
-func (f *File) SetOutputsForPackage(pkg string, outputs []Output) error {
+// SetOutputsForPackage records outputs for pkg on the given system, leaving the
+// other systems untouched; call Save to persist them.
+func (f *File) SetOutputsForPackage(pkg, system string, outputs []Output) error {
 	p, err := f.Resolve(pkg)
 	if err != nil {
 		return err
@@ -239,11 +248,11 @@ func (f *File) SetOutputsForPackage(pkg string, outputs []Output) error {
 	if p.Systems == nil {
 		p.Systems = map[string]*SystemInfo{}
 	}
-	if p.Systems[nix.System()] == nil {
-		p.Systems[nix.System()] = &SystemInfo{}
+	if p.Systems[system] == nil {
+		p.Systems[system] = &SystemInfo{}
 	}
-	p.Systems[nix.System()].Outputs = outputs
-	return f.Save()
+	p.Systems[system].Outputs = outputs
+	return nil
 }
 
 func (f *File) isDirty() (bool, error) {
