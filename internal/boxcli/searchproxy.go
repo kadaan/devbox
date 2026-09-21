@@ -289,7 +289,8 @@ func searchProxyIndexCmd() *cobra.Command {
 				return usererr.WithUserMessage(err, "Could not get an nxv to build with")
 			}
 			if err := nxvops.Build(
-				cmd.Context(), binary, flags.nxvDB, flags.backfillEvals, args); err != nil {
+				cmd.Context(), binary, flags.nxvDB, flags.backfillEvals, args,
+			); err != nil {
 				return usererr.WithUserMessage(err, "Building the nxv index failed")
 			}
 			return nil

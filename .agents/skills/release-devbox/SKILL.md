@@ -137,19 +137,24 @@ Swap `--draft` for `--publish` to go live. Notes on driving it as an agent:
   cause and re-run the same command — it picks up where it left off rather than
   duplicating work.
 - **`--skip-cli-tests` exists but is a loaded gun.** It only skips the *check*
-  that the latest `cli-tests` run on `main` is green; `cli-release` still runs
-  the whole suite and fails the build if it isn't. Use it when the check is
-  wrong (a run still in progress you've already inspected, a flake you've
-  confirmed), not to push past a genuinely red `main`.
+  that the latest `cli-tests` run on `main` isn't red; `cli-release` still runs
+  the whole suite and fails the build if it isn't green. A run that's merely
+  queued or in progress (the normal state right after the flake bump merges)
+  doesn't block — only a finished, failed run does. Use the flag when that
+  check is wrong (a flake you've confirmed), not to push past a genuinely red
+  `main`.
 
 If `flake.nix` needs bumping, the script offers to do the whole thing: it
 rewrites `lastTag`, refreshes `vendor-hash` and `flake.lock`, commits to
 `bump-flake-<version>`, pushes, opens the PR, and puts you back on `main` with a
-clean tree. Then it stops — that bump has to be reviewed and merged before the
-tag is pushed, otherwise the tagged commit ships the wrong version string. Get
-it merged and re-run the same command; preflight pulls the new `main` and
-carries on. A re-run while the PR is still open stops immediately with its URL
-rather than opening a second one.
+clean tree. Then it stops (exit 0 — this is a planned pause, not a failure)
+and prints the exact command to continue with, e.g.
+`devbox run publish-release --version 0.18.2`. That bump has to be reviewed and
+merged before the tag is pushed, otherwise the tagged commit ships the wrong
+version string. Get it merged and run the printed command; `--version` skips
+the version prompt and preflight pulls the new `main` and carries on. A re-run
+while the PR is still open stops immediately with its URL rather than opening
+a second one.
 
 Preflight is picky about the checkout on purpose, since the tag lands on
 whatever `HEAD` is. A `main` that's merely behind `origin/main` and clean
@@ -160,13 +165,16 @@ commits) stops with the command that fixes it.
 
 Don't work around these; they're why the script exists.
 
-- **Draft before tag.** goreleaser runs with `use_existing_draft` and attaches
-  its artifacts to whatever draft it finds, keeping the body. With no draft it
-  creates one whose body is a bare list of commit SHAs — that's what shipped as
-  the 0.17.5 release notes.
+- **Draft before tag.** goreleaser runs with `release.disable` and only builds
+  `dist/`; `cli-release` uploads that to the release for the tag, looking it up
+  by tag with `gh`. With no draft it creates one from GitHub's generated notes —
+  usable, but not the notes you wrote. (goreleaser used to do the upload itself,
+  but it matched drafts by *title*, so any release with a real title got a
+  silent duplicate draft with bare-commit-SHA notes. That's what shipped as the
+  0.17.5 release notes, and what stalled 0.18.0.)
 - **Publish after the build.** `docker-image-release` fires on the release event
   and immediately downloads the release tarballs to bake into the image.
-  Publishing before goreleaser uploads them fails the Docker build. That's
+  Publishing before `cli-release` uploads them fails the Docker build. That's
   exactly what happened on 0.17.3 and 0.17.5, both published from the GitHub UI,
   which creates the tag and publishes in one action.
 - **Flake bump before the `cli-tests` check.** The bump has to merge into `main`,
@@ -186,7 +194,7 @@ result and the current `flake.nix` version in one shot.
 | --- | --- | --- |
 | `cli-release` never started | Tag push didn't land | Re-run the same command |
 | `cli-release` failed in `tests` | Red `main` (see below) | Fix the test, re-run |
-| Draft has 0 assets | goreleaser didn't find the draft | Confirm the draft exists, re-run |
+| Draft has 0 assets | The upload step didn't run or failed | Check `cli-release`'s "Attach artifacts" step, re-run |
 | Published but installer serves the old version | `cli-post-release` failed or is still running | `gh run list --workflow=cli-post-release.yml` |
 | Docker build failed | Published before assets uploaded | Re-run `docker-image-release` via `workflow_dispatch` with the tag |
 

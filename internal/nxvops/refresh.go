@@ -56,7 +56,8 @@ func Refresh(ctx context.Context, binary, dbPath string, args []string) error {
 			if arg == flag || strings.HasPrefix(arg, flag+"=") {
 				return redact.Errorf(
 					"%s re-plans the index and is forbidden here; rebuild into a fresh database instead",
-					redact.Safe(arg))
+					redact.Safe(arg),
+				)
 			}
 		}
 	}
@@ -134,7 +135,8 @@ func Build(ctx context.Context, binary, dbPath string, backfillEvals bool, args 
 	if _, err := os.Stat(dbPath); err == nil {
 		return redact.Errorf(
 			"%s already holds an index; remove it or build somewhere else",
-			redact.Safe(dbPath))
+			redact.Safe(dbPath),
+		)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return redact.Errorf("check %s: %w", redact.Safe(dbPath), redact.Safe(err))
 	}

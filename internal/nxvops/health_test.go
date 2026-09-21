@@ -47,7 +47,8 @@ func TestCheckHealthFailsOnLagBeyondTheThreshold(t *testing.T) {
 func TestCheckHealthReportsAnomalies(t *testing.T) {
 	err := nxvops.CheckHealth(
 		[]byte(`{"healthy":false,"head_lag_hours":9,"anomalies":["count floor breached"]}`),
-		maxLag)
+		maxLag,
+	)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "count floor breached")

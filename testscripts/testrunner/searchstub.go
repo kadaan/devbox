@@ -51,7 +51,8 @@ func startSearchStub(topLevel testing.TB) {
 		server := httptest.NewServer(http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				serveRecording(w, r, dir, recording)
-			}))
+			},
+		))
 		searchStubURL = server.URL
 		// The stub outlives every script, so it is closed when the binary is,
 		// not per test.
@@ -75,7 +76,8 @@ func serveRecording(w http.ResponseWriter, r *http.Request, dir string, recordin
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = fmt.Fprintf(w, `{"error":%q}`, fmt.Sprintf(
 			"no search recording for %s; re-record with %s=1",
-			r.URL.RequestURI(), recordSearchEnv))
+			r.URL.RequestURI(), recordSearchEnv,
+		))
 		return
 	}
 

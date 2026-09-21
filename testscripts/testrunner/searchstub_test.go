@@ -41,7 +41,8 @@ func TestServeRecordingServesARecording(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(
 		filepath.Join(dir, "v2_resolve_name_go_version_1.19.json"),
-		[]byte(`{"name":"go","version":"1.19"}`), 0o600))
+		[]byte(`{"name":"go","version":"1.19"}`), 0o600,
+	))
 
 	recorder := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/v2/resolve?name=go&version=1.19", nil)
