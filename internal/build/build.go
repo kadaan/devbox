@@ -37,7 +37,7 @@ var (
 	// Build with -X go.jetify.com/devbox/internal/build.SearchHost=<url> to ship
 	// a binary that defaults to a self-hosted devbox search proxy; the
 	// DEVBOX_SEARCH_HOST environment variable still overrides it at runtime.
-	SearchHost = "https://search.devbox.sh"
+	SearchHost = "https://www.nixsearch.com"
 )
 
 // User-presentable names of operating systems supported by Devbox.

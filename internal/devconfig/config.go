@@ -148,8 +148,7 @@ func Find(path string) (*Config, error) {
 // searchDir looks for a config file in dir. It does not search parent
 // directories.
 func searchDir(dir string) (*Config, error) {
-	try := []string{configfile.DefaultName}
-	for _, name := range try {
+	for _, name := range configfile.ValidNames {
 		path := filepath.Join(dir, name)
 		slog.Debug("trying config file", "path", path)
 
@@ -162,7 +161,7 @@ func searchDir(dir string) (*Config, error) {
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
-		// Ignore directories named devbox.json.
+		// Ignore directories that happen to share a config filename.
 		if errors.Is(err, errIsDirectory) {
 			continue
 		}
