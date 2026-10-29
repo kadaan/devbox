@@ -59,7 +59,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: ./go.mod
       - name: Build devbox
@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: crate-ci/typos@v1.16.26
+      - uses: crate-ci/typos@v1.51.1
 
   flake-test:
     name: Test Flake Build
@@ -86,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@jl/migrate-installer
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
       - name: Build flake
@@ -106,19 +106,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install devbox
-        uses: jetify-com/devbox-install-action@jl/migrate-installer
-        with:
-          enable-cache: true
-
+      # Must be restored before installing devbox: the install action runs our
+      # init_hook (`go install tool`), which populates ~/go/pkg/mod. Restoring
+      # the cache on top of that fails with "Cannot open: File exists".
       - name: Mount golang cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/golangci-lint
             ~/.cache/go-build
             ~/go/pkg
           key: go-${{ runner.os }}-${{ hashFiles('go.sum') }}
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.15.0
+        with:
+          enable-cache: true
 
       - run:  devbox run lint
 
@@ -176,7 +179,7 @@ jobs:
 
       - uses: actions/checkout@v7
       - name: Mount golang cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -192,7 +195,7 @@ jobs:
             brew install dash zsh
           fi
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@jl/migrate-installer
+        uses: jetify-com/devbox-install-action@v0.15.0
         with:
           enable-cache: true
       - name: Setup Nix GitHub authentication
@@ -320,7 +323,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        nix-version: [2.18.0, 2.19.2, 2.24.7, 2.30.2, 2.35.2]
+        nix-version: [2.18.0, 2.19.2, 2.24.7, 2.30.2, 2.35.4]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -333,8 +336,11 @@ jobs:
           chmod +x ./devbox
           sudo mv ./devbox /usr/local/bin/
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
+        uses: DeterminateSystems/nix-installer-action@v23
         with:
+          # Install upstream Nix (from nix-package-url below), not Determinate
+          # Nix. The installer defaults to Determinate Nix otherwise.
+          determinate: false
           logger: pretty
           # access-tokens is written to the system-wide /etc/nix/nix.conf so both
           # the Nix client and daemon authenticate to GitHub and avoid the

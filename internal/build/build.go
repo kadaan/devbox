@@ -58,8 +58,9 @@ func OS() string {
 		case "linux":
 			if fileutil.Exists("/proc/sys/fs/binfmt_misc/WSLInterop") || fileutil.Exists("/run/WSL") {
 				osName = OSWSL
+			} else {
+				osName = OSLinux
 			}
-			osName = OSLinux
 		case "darwin":
 			osName = OSDarwin
 		default:

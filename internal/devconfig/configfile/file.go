@@ -43,6 +43,10 @@ type ConfigFile struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 
+	// DevboxVersion constrains which devbox versions can be used with this
+	// project and what happens when the running version doesn't match.
+	DevboxVersion *DevboxVersion `json:"devbox_version,omitempty"`
+
 	// PackagesMutator is the slice of Nix packages that devbox makes available in
 	// its environment. Deliberately do not omitempty.
 	PackagesMutator PackagesMutator `json:"packages"`
@@ -142,9 +146,14 @@ func (c *ConfigFile) SaveTo(dir string) error {
 	return os.WriteFile(filepath.Join(dir, c.FileName()), c.Bytes(), 0o644)
 }
 
+// Save writes the config back to the file at AbsRootPath.
+//
 // TODO: Can we remove SaveTo and just use Save()?
 func (c *ConfigFile) Save() error {
-	return c.SaveTo(c.AbsRootPath)
+	if c.AbsRootPath == "" {
+		return errors.New("cannot save config: no file path")
+	}
+	return c.SaveTo(filepath.Dir(c.AbsRootPath))
 }
 
 // Get returns the package with the given versionedName
@@ -188,6 +197,7 @@ func validateConfig(cfg *ConfigFile) error {
 		ValidateNixpkg,
 		validateScripts,
 		validateAliases,
+		validateDevboxVersion,
 	}
 
 	for _, fn := range fns {

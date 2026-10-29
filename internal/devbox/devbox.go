@@ -45,6 +45,7 @@ import (
 	"go.jetify.com/devbox/internal/shellgen"
 	"go.jetify.com/devbox/internal/telemetry"
 	"go.jetify.com/devbox/internal/ux"
+	"go.jetify.com/devbox/internal/vercheck"
 	"go.jetify.com/devbox/nix/flake"
 )
 
@@ -107,6 +108,16 @@ func Open(opts *devopt.Opts) (*Devbox, error) {
 	}
 	if err != nil {
 		return nil, usererr.WithUserMessage(err, "Error loading devbox.json.")
+	}
+
+	var stderr io.Writer = os.Stderr
+	if opts.Stderr != nil {
+		stderr = opts.Stderr
+	}
+	if !opts.SkipVersionCheck {
+		if err := vercheck.CheckProjectVersion(stderr, cfg.Root.AbsRootPath, cfg.Root.DevboxVersion); err != nil {
+			return nil, err
+		}
 	}
 
 	environment, err := validateEnvironment(opts.Environment)
@@ -270,9 +281,11 @@ func (d *Devbox) RunScript(ctx context.Context, envOpts devopt.EnvOptions, cmdNa
 	lock.SetIgnoreShellMismatch(true)
 
 	var env map[string]string
-	if d.IsEnvEnabled() {
-		// Skip ensureStateIsUpToDate if we are already in a shell of this devbox-project
+	if d.IsEnvEnabled() && !envOpts.Pure {
+		// Skip ensureStateIsUpToDate if we are already in a shell of this
+		// devbox-project. A --pure run still needs a freshly computed env.
 		env = envir.PairsToMap(os.Environ())
+		maps.Copy(env, d.env)
 
 		// We set this to ensure that init-hooks do NOT re-run. They would have
 		// run when initializing the Devbox Environment in the current shell.

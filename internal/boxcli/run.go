@@ -6,7 +6,6 @@ package boxcli
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -83,58 +82,72 @@ func runCmd(defaults runFlagDefaults) *cobra.Command {
 		"run command in all projects in the working directory, recursively. If command is not found in any project, it will be skipped.",
 	)
 
-	command.ValidArgs = listScripts(command, flags)
+	// Compute completions lazily so that running a command doesn't open the
+	// project just to build the command tree.
+	command.ValidArgsFunction = func(
+		cmd *cobra.Command, args []string, toComplete string,
+	) ([]string, cobra.ShellCompDirective) {
+		return completeScripts(cmd, args, toComplete, flags)
+	}
 
 	return command
 }
 
-func listScripts(cmd *cobra.Command, flags runCmdFlags) []string {
-	path := flags.config.path
-
-	// Special code path for shell completion.
-	// Landau: I'm not entirely sure why:
-	// * Flags need to be parsed again
-	// * cmd.Flag("config") contains the correct value, but flags.config.path is empty
-	// Give my low confidence, I'm making this a very narrow code path.
-	if path == "" && slices.Contains(os.Args, "__complete") {
-		_ = cmd.ParseFlags(os.Args)
-		if flag := cmd.Flag("config"); flag != nil && flag.Value != nil {
-			path = flag.Value.String()
-		}
+// completeScripts completes the first argument of `devbox run` with the
+// project's script names.
+func completeScripts(
+	cmd *cobra.Command, args []string, toComplete string, flags runCmdFlags,
+) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveDefault
 	}
+	scripts, err := listScripts(cmd, flags, true /*skipVersionCheck*/)
+	if err != nil {
+		slog.Error("failed to open devbox", "err", err)
+	}
+	if len(scripts) == 0 {
+		return nil, cobra.ShellCompDirectiveDefault
+	}
+	return lo.Filter(scripts, func(s string, _ int) bool {
+		return strings.HasPrefix(s, toComplete)
+	}), cobra.ShellCompDirectiveNoFileComp
+}
 
+func listScripts(cmd *cobra.Command, flags runCmdFlags, skipVersionCheck bool) ([]string, error) {
 	devboxOpts := &devopt.Opts{
-		Dir:            path,
-		Environment:    flags.config.environment,
-		Stderr:         cmd.ErrOrStderr(),
-		IgnoreWarnings: true,
+		Dir:              flags.config.path,
+		Environment:      flags.config.environment,
+		Stderr:           cmd.ErrOrStderr(),
+		IgnoreWarnings:   true,
+		SkipVersionCheck: skipVersionCheck,
 	}
 
 	if flags.allProjects {
 		boxes, err := multi.Open(devboxOpts)
 		if err != nil {
-			slog.Error("failed to open devbox", "err", err)
-			return nil
+			return nil, err
 		}
 		scripts := []string{}
 		for _, box := range boxes {
 			scripts = append(scripts, box.ListScripts()...)
 		}
 		sort.Strings(scripts)
-		return lo.Uniq(scripts)
+		return lo.Uniq(scripts), nil
 	}
 	box, err := devbox.Open(devboxOpts)
 	if err != nil {
-		slog.Error("failed to open devbox", "err", err)
-		return nil
+		return nil, err
 	}
-	return box.ListScripts()
+	return box.ListScripts(), nil
 }
 
 func runScriptCmd(cmd *cobra.Command, args []string, flags runCmdFlags) error {
 	ctx := cmd.Context()
 	if len(args) == 0 || flags.listScripts {
-		scripts := listScripts(cmd, flags)
+		scripts, err := listScripts(cmd, flags, false /*skipVersionCheck*/)
+		if err != nil {
+			return err
+		}
 		if len(scripts) == 0 {
 			fmt.Fprintln(cmd.OutOrStdout(), "no scripts defined in devbox.json")
 			return nil
@@ -233,15 +246,16 @@ func wrapArgsForRun(rootCmd *cobra.Command, args []string) []string {
 	// are 2 or fewer arguments, we also don't need to do anything because there
 	// are no flags after a non-run non-flag arg.
 	// IMPROVEMENT: technically users can pass a flag before the subcommand "run"
-	if len(args) <= 2 || args[0] != "run" || slices.Contains(args, "--") {
+	runIdx := 0
+	if len(args) > 0 && args[0] == "global" {
+		runIdx = 1
+	}
+	if len(args) <= runIdx+2 || args[runIdx] != "run" {
 		return args
 	}
 
-	cmd, found := lo.Find(
-		rootCmd.Commands(),
-		func(item *cobra.Command) bool { return item.Name() == "run" },
-	)
-	if !found {
+	cmd, _, err := rootCmd.Find(args[:runIdx+1])
+	if err != nil || cmd.Name() != "run" {
 		return args
 	}
 	_ = cmd.InheritedFlags() // bug in cobra requires this to be called to ensure flags contains inherited flags.
@@ -253,10 +267,18 @@ func wrapArgsForRun(rootCmd *cobra.Command, args []string) []string {
 	// Note that defaulted does not mean initial value, it only means flags
 	// that don't require a value.
 	// For example, --bool-flag has NoOptDefVal set to "true".
-	i := 1
+	i := runIdx + 1
 	for i < len(args) {
 		arg := args[i]
+		if arg == "--" {
+			// The user already separated run's flags from the command.
+			return args
+		}
 		if !strings.HasPrefix(arg, "-") {
+			if i+1 < len(args) && args[i+1] == "--" {
+				// e.g. run script -- args, which cobra already handles.
+				return args
+			}
 			// We found and argument that is not part of the flags, so we can stop
 			// This inserts a "--" before the first non-flag argument
 			// Turning
