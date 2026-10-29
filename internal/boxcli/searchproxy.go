@@ -36,8 +36,9 @@ type searchProxyFlags struct {
 func searchProxyCmd() *cobra.Command {
 	flags := searchProxyFlags{}
 	searchProxyCommand := &cobra.Command{
-		Use:   "search-proxy",
-		Short: "Serve the Devbox search API from an nxv version index",
+		Use:    "search-proxy",
+		Short:  "Serve the Devbox search API from an nxv version index",
+		Hidden: true,
 		Long: heredoc.Doc(`
 			Serve the Devbox search API from a self-hosted nxv version index.
 
