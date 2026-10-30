@@ -38,6 +38,12 @@ var (
 	// a binary that defaults to a self-hosted devbox search proxy; the
 	// DEVBOX_SEARCH_HOST environment variable still overrides it at runtime.
 	SearchHost = "https://www.nixsearch.com"
+
+	// Launcher is "true" in official release builds, which makes devbox its
+	// own launcher (see the launcher package). Builds from package managers
+	// such as nixpkgs leave it unset, so the package manager stays in charge
+	// of the installed devbox version.
+	Launcher = ""
 )
 
 // User-presentable names of operating systems supported by Devbox.

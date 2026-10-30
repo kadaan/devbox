@@ -27,7 +27,7 @@ direnv calls devbox on every `cd`.
 | 3 | Cache macOS machine ID | ~20ms every command (macOS) | ~30–50 |
 | 4 | Throttle `upload-telemetry` child process | 1 fork + HTTPS per command | ~40–60 |
 | 5 | Lightweight `generate direnv --print-envrc` | every direnv reload | ~15–30 |
-| 6 | Faster launcher script | 100–200ms every command | ~50–80 (launcher repo) |
+| 6 | Make devbox its own launcher (instead of a faster launcher script) | ~70ms every command | ~1,500 incl. tests and installer |
 | 7 | Early version switch for `devbox_version: "auto"` | one full startup | ~100–150 |
 | 8 | Split state hash: nix vs non-nix inputs | ~1s+ per config edit | ~150–250 |
 | 9 | Persist narinfo lookups on disk | network round-trips per recompute | ~60–100 |
@@ -47,7 +47,7 @@ direnv `cd` about 5–10× faster when nothing has changed.
 
 ## Tier 1: fixed cost on every command
 
-### 1. Cache the nix version info on disk
+### 1. Cache the nix version info on disk (done in #3020)
 
 **Win:** ~90ms on every command. Could take `shellenv` from ~100ms to ~10–20ms.
 **Effort:** ~80–120 LOC.
@@ -67,7 +67,7 @@ Fix:
   `ExcludedPlatforms` is set, so `nix.System()` is never called in the common
   case. ~3–5 LOC.
 
-### 2. Telemetry re-opens the whole project after every command
+### 2. Telemetry re-opens the whole project after every command (done in #3021)
 
 **Win:** one extra `devbox.Open` per command (re-parses devbox.json and
 devbox.lock, reloads plugins, which can hit the network).
@@ -85,7 +85,7 @@ Fix:
   so it is always nil and `--config` is ignored. Look it up on the resolved
   subcommand instead. ~2–5 LOC.
 
-### 3. Cache the macOS machine ID
+### 3. Cache the macOS machine ID (done in #3021)
 
 **Win:** ~20ms per command on macOS.
 **Effort:** ~30–50 LOC.
@@ -94,7 +94,7 @@ Fix:
 `ioreg` every time. Fix: compute it once and store it in the XDG state dir;
 read the file on subsequent runs.
 
-### 4. Throttle the `devbox upload-telemetry` child process
+### 4. Throttle the `devbox upload-telemetry` child process (done in #3021)
 
 **Win:** removes a second devbox process + HTTPS calls on every command (every
 direnv `cd`).
@@ -105,7 +105,7 @@ every successful command. Fix: record the last upload time in the state dir and
 only spawn the uploader when it was more than N minutes ago, or when the
 buffered event count exceeds a threshold.
 
-### 5. Make `generate direnv --print-envrc` cheap
+### 5. Make `generate direnv --print-envrc` cheap (done in #3022)
 
 **Win:** every direnv reload.
 **Effort:** ~15–30 LOC.
@@ -116,18 +116,24 @@ inherits `PersistentPreRunE: ensureNixInstalled` from `generateCmd`
 `PersistentPreRunE` on the direnv subcommand (or check the flag) to skip the
 nix check, and skip telemetry for it.
 
-### 6. Speed up the launcher script (launcher repo)
+### 6. Make devbox its own launcher (done in #3024)
 
-**Win:** 100–200ms on every command through `/usr/local/bin/devbox`.
-**Effort:** ~50–80 LOC changed, in the launcher repo, not this one.
+**Win:** about 70ms on every command through `/usr/local/bin/devbox`. With
+`devbox version`, the bash launcher took 78ms. The native launcher takes 8ms
+when the installed binary is the current version, about the same as running
+the binary directly, and 17ms when it switches to another version.
+**Effort:** ~1,500 LOC including tests and the new installer, all in this repo.
 
-The launcher forks about 10 subshells (`tr`, `uname`, `date -r`, `cat`) and
-chains three `exec env` calls. When its version cache is more than 24h old it
-also does a blocking `curl` with no timeout. Fix: use bash built-ins and
-parameter expansion, collapse to a single `exec`, and refresh the version
-check in the background (with a timeout).
+The bash launcher forks about 10 subshells (`tr`, `uname`, `date -r`, `cat`)
+and chains three `exec env` calls. When its version cache is more than 24h old
+it also does a blocking `curl` with no timeout. Rather than speed up the
+script in the launcher repo, release builds of devbox now do the launcher's
+job themselves (`internal/launcher`), and version checks run in a detached
+child process. See `specs/native-launcher.md` for the design, compatibility
+with older versions, and the rollout. The rollout's remaining step is
+publishing the new installer.
 
-### 7. Switch versions early for `devbox_version: "auto"`
+### 7. Switch versions early for `devbox_version: "auto"` (done in #3023)
 
 **Win:** avoids paying for two full startups on every invocation.
 **Effort:** ~100–150 LOC.
@@ -287,4 +293,5 @@ nixpkgs resolution is already cached.
 1. Items 1–5 (~200–330 LOC): biggest win for terminal start and direnv `cd`.
 2. Item 8 (~150–250 LOC): biggest win for editing `devbox.json`.
 3. Item 12 (~30–50 LOC): easiest win for `devbox update`.
-4. The rest as time allows; item 6 needs a launcher-repo PR.
+4. The rest as time allows. Item 6 is done except for publishing the new
+   installer (see `specs/native-launcher.md`).

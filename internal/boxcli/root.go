@@ -16,6 +16,7 @@ import (
 	"go.jetify.com/devbox/internal/boxcli/midcobra"
 	"go.jetify.com/devbox/internal/cmdutil"
 	"go.jetify.com/devbox/internal/debug"
+	"go.jetify.com/devbox/internal/launcher"
 	"go.jetify.com/devbox/internal/telemetry"
 	"go.jetify.com/devbox/internal/vercheck"
 )
@@ -103,6 +104,9 @@ func Execute(ctx context.Context, args []string) int {
 	defer debug.Recover()
 	rootCmd := RootCmd()
 	exe := midcobra.New(rootCmd)
+	// Runs first because it might re-run the command with another devbox
+	// version, which makes the work done by any earlier middleware wasted.
+	exe.AddMiddleware(midcobra.ProjectVersion())
 	exe.AddMiddleware(traceMiddleware)
 	exe.AddMiddleware(midcobra.Telemetry())
 	exe.AddMiddleware(debugMiddleware)
@@ -110,6 +114,10 @@ func Execute(ctx context.Context, args []string) int {
 }
 
 func Main() {
+	// Runs first because it might run another devbox version instead of this
+	// one, which makes any work done before it wasted.
+	launcher.Main()
+
 	timer := debug.Timer(strings.Join(os.Args, " "))
 	setSystemBinaryPaths()
 	ctx := context.Background()
